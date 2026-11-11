@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import type { Session } from "next-auth";
 import { auth } from "@/lib/auth";
 import type { AuthRole } from "@/lib/auth.config";
+import { prisma } from "@/lib/prisma";
 
 type SessionUser = Session["user"];
 
@@ -23,7 +24,7 @@ export async function requireRole(
 ): Promise<SessionUser | NextResponse> {
   const session = await auth();
 
-  if (!session?.user) {
+  if (!session?.user.id) {
     if (context === "api") {
       return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
     }
@@ -31,7 +32,20 @@ export async function requireRole(
     redirect("/login");
   }
 
-  if (!roles.includes(session.user.role)) {
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, name: true, email: true, role: true, isActive: true },
+  });
+
+  if (!user?.isActive) {
+    if (context === "api") {
+      return NextResponse.json({ error: "Tài khoản không còn hoạt động" }, { status: 401 });
+    }
+
+    redirect("/login");
+  }
+
+  if (!roles.includes(user.role)) {
     if (context === "api") {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
@@ -39,5 +53,11 @@ export async function requireRole(
     redirect(forbiddenRedirect);
   }
 
-  return session.user;
+  return {
+    ...session.user,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+  };
 }

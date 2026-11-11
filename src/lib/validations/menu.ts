@@ -14,8 +14,18 @@ export const menuQuerySchema = z.object({
     .max(100, "Từ khóa không được vượt quá 100 ký tự")
     .optional()
     .or(z.literal("")),
-  available: z.enum(["true", "false"]).optional(),
-});
+  minPrice: z.coerce.number().int().min(0).max(10_000_000).optional(),
+  maxPrice: z.coerce.number().int().min(0).max(10_000_000).optional(),
+}).refine(
+  (value) =>
+    value.minPrice === undefined ||
+    value.maxPrice === undefined ||
+    value.minPrice <= value.maxPrice,
+  {
+    message: "Giá tối thiểu không được lớn hơn giá tối đa",
+    path: ["maxPrice"],
+  },
+);
 
 export function slugifyMenuName(name: string): string {
   return name
@@ -43,7 +53,7 @@ const imageUrlSchema = z
 const menuOptionSchema = z
   .object({
     id: z.string().min(1).optional(),
-    group: z.enum(["SIZE", "TOPPING"]),
+    group: z.enum(["SIZE", "ICE", "SUGAR", "TOPPING"]),
     name: z.string().trim().min(1).max(80),
     priceDelta: z.number().int(),
     isAvailable: z.boolean(),

@@ -1,10 +1,17 @@
 import { Suspense } from "react";
-import { AdminSectionPlaceholder } from "@/components/admin/section-placeholder";
+import { requireRole } from "@/lib/rbac";
+import { rolePermissions } from "@/lib/permissions";
+import { OrderOperations } from "@/components/admin/order-operations";
+
+async function OrdersContent() {
+  const actor = await requireRole(rolePermissions.orderOperations, "page", "/");
+  return <OrderOperations role={actor.role} />;
+}
 
 export default function AdminOrdersPage() {
   return (
     <Suspense fallback={<main className="flex-1 px-6 py-8" />}>
-      <AdminSectionPlaceholder section="orders" title="Đơn hàng" />
+      <OrdersContent />
     </Suspense>
   );
 }

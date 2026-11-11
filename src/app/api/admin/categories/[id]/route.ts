@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { adminPermissions } from "@/lib/permissions";
 import { requireRole } from "@/lib/rbac";
+import { writeAuditLog } from "@/lib/audit-log";
 import {
   slugifyCategoryName,
   updateCategorySchema,
@@ -50,10 +51,19 @@ export async function PATCH(request: Request, context: RouteContext) {
         { status: 400 },
       );
     }
-    const category = await prisma.category.update({
-      where: { id },
-      data: updateData,
-      select: { id: true, name: true, slug: true, sortOrder: true },
+    const category = await prisma.$transaction(async (transaction) => {
+      const updated = await transaction.category.update({
+        where: { id },
+        data: updateData,
+        select: { id: true, name: true, slug: true, sortOrder: true },
+      });
+      await writeAuditLog(transaction, access, {
+        action: "CATEGORY_UPDATED",
+        entityType: "Category",
+        entityId: id,
+        details: { changes: updateData },
+      });
+      return updated;
     });
     return NextResponse.json({ category });
   } catch (error) {
@@ -85,7 +95,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
     const result = await prisma.$transaction(async (transaction) => {
       const category = await transaction.category.findUnique({
         where: { id },
-        select: { id: true, _count: { select: { items: true } } },
+        select: {
+          id: true,
+          name: true,
+          _count: { select: { items: true } },
+        },
       });
       if (!category) {
         return "missing" as const;
@@ -94,6 +108,12 @@ export async function DELETE(_request: Request, context: RouteContext) {
         return "has-items" as const;
       }
       await transaction.category.delete({ where: { id } });
+      await writeAuditLog(transaction, access, {
+        action: "CATEGORY_DELETED",
+        entityType: "Category",
+        entityId: id,
+        details: { name: category.name },
+      });
       return "deleted" as const;
     });
 

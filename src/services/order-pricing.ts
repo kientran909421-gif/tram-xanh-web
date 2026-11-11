@@ -19,6 +19,7 @@ export function computeTotals(
   items: readonly OrderPricingInput[],
   promotion: PromotionForDiscount | null,
   orderType: "TAKEAWAY" | "DELIVERY",
+  configuredDeliveryFee = DELIVERY_FEE,
 ): OrderPricingResult {
   const unitPrices = items.map(
     (item) =>
@@ -30,7 +31,7 @@ export function computeTotals(
     0,
   );
   const discount = promotion ? calcDiscount(subtotal, promotion) : 0;
-  const deliveryFee = orderType === "DELIVERY" ? DELIVERY_FEE : 0;
+  const deliveryFee = orderType === "DELIVERY" ? configuredDeliveryFee : 0;
 
   return {
     unitPrices,

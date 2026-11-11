@@ -2,6 +2,7 @@ import Link from "next/link";
 import { signOut } from "@/lib/auth";
 import type { AuthRole } from "@/lib/auth.config";
 import { Button } from "@/components/ui/button";
+import { roleHomePath } from "@/lib/permissions";
 
 export function UserMenu({
   user,
@@ -26,14 +27,26 @@ export function UserMenu({
       <span className="hidden text-muted-foreground sm:inline">
         {user.name ?? user.email}
       </span>
-      <Link className="text-foreground/80 hover:text-foreground" href="/account/orders">
-        Đơn của tôi
-      </Link>
       {isStaff ? (
-        <Link className="text-foreground/80 hover:text-foreground" href="/admin">
-          Quản trị
+        <Link
+          className="text-foreground/80 hover:text-foreground"
+          href={roleHomePath(user.role)}
+        >
+          Dashboard
         </Link>
-      ) : null}
+      ) : (
+        <>
+          <Link className="text-foreground/80 hover:text-foreground" href="/account/orders">
+            Đơn của tôi
+          </Link>
+          <Link className="text-foreground/80 hover:text-foreground" href="/account/profile">
+            Hồ sơ
+          </Link>
+        </>
+      )}
+      <Link className="text-foreground/80 hover:text-foreground" href="/change-password">
+        Đổi mật khẩu
+      </Link>
       <form
         action={async () => {
           "use server";

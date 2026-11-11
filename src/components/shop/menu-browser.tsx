@@ -1,6 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type FormEvent,
+} from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { MenuCard } from "@/components/shop/menu-card";
@@ -26,7 +32,8 @@ export function MenuBrowser() {
   const searchString = searchParams.toString();
   const categorySlug = searchParams.get("category") ?? "";
   const searchQuery = searchParams.get("q") ?? "";
-  const availableOnly = searchParams.get("available") === "true";
+  const minPriceFilter = searchParams.get("minPrice") ?? "";
+  const maxPriceFilter = searchParams.get("maxPrice") ?? "";
   const [queryDraft, setQueryDraft] = useState({
     forQuery: searchQuery,
     value: searchQuery,
@@ -135,6 +142,22 @@ export function MenuBrowser() {
     [pathname, router],
   );
 
+  function applyPriceRange(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const params = new URLSearchParams(searchString);
+    const minPrice = String(formData.get("minPrice") ?? "").trim();
+    const maxPrice = String(formData.get("maxPrice") ?? "").trim();
+    if (minPrice) params.set("minPrice", minPrice);
+    else params.delete("minPrice");
+    if (maxPrice) params.set("maxPrice", maxPrice);
+    else params.delete("maxPrice");
+    const nextQuery = params.toString();
+    router.replace(nextQuery ? `${pathname}?${nextQuery}` : pathname, {
+      scroll: false,
+    });
+  }
+
   useEffect(() => {
     if (queryInput === searchQuery) {
       return;
@@ -148,10 +171,7 @@ export function MenuBrowser() {
   }, [queryInput, searchQuery, updateQuery]);
 
   function handleAdd(item: MenuItemWithOptions, selection: MenuSelection) {
-    const options = (selection.size
-      ? [selection.size, ...selection.toppings]
-      : selection.toppings
-    ).map((option) => ({
+    const options = selection.options.map((option) => ({
         id: option.id,
         group: option.group,
         name: option.name,
@@ -244,7 +264,7 @@ export function MenuBrowser() {
             ) : null}
           </div>
 
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
             <Input
               className="max-w-xl border-border bg-card"
               type="search"
@@ -259,17 +279,40 @@ export function MenuBrowser() {
                 })
               }
             />
-            <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-medium text-foreground">
-              <input
-                className="size-4 accent-primary"
-                type="checkbox"
-                checked={availableOnly}
-                onChange={(event) =>
-                  updateQuery("available", event.target.checked ? "true" : "")
-                }
-              />
-              Chỉ món còn hàng
-            </label>
+            <form
+              className="flex flex-wrap items-end gap-2"
+              key={`${minPriceFilter}:${maxPriceFilter}`}
+              onSubmit={applyPriceRange}
+            >
+              <label className="grid gap-1 text-xs font-medium">
+                Giá từ (đ)
+                <input
+                  className="w-32 rounded-lg border border-border bg-card px-3 py-2 text-sm"
+                  name="minPrice"
+                  type="number"
+                  min={0}
+                  max={10_000_000}
+                  defaultValue={minPriceFilter}
+                />
+              </label>
+              <label className="grid gap-1 text-xs font-medium">
+                Đến (đ)
+                <input
+                  className="w-32 rounded-lg border border-border bg-card px-3 py-2 text-sm"
+                  name="maxPrice"
+                  type="number"
+                  min={0}
+                  max={10_000_000}
+                  defaultValue={maxPriceFilter}
+                />
+              </label>
+              <button
+                className="h-10 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground"
+                type="submit"
+              >
+                Lọc giá
+              </button>
+            </form>
           </div>
 
           {menuError ? (

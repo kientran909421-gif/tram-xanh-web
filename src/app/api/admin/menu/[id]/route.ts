@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { adminPermissions } from "@/lib/permissions";
 import { requireRole } from "@/lib/rbac";
+import { writeAuditLog } from "@/lib/audit-log";
 import { updateMenuSchema } from "@/lib/validations/menu";
 import { MenuInputError, uniqueMenuSlug } from "@/services/admin-menu";
 
@@ -124,13 +125,23 @@ export async function PATCH(request: Request, context: RouteContext) {
         }
       }
 
-      return transaction.menuItem.findUniqueOrThrow({
+      const updated = await transaction.menuItem.findUniqueOrThrow({
         where: { id },
         include: {
           category: { select: { id: true, name: true, slug: true } },
           options: { orderBy: [{ group: "asc" }, { name: "asc" }] },
         },
       });
+      await writeAuditLog(transaction, access, {
+        action: "MENU_ITEM_UPDATED",
+        entityType: "MenuItem",
+        entityId: id,
+        details: {
+          previous: { name: current.name, price: current.price },
+          changes: parsed.data,
+        },
+      });
+      return updated;
     });
     return NextResponse.json({ item });
   } catch (error) {
@@ -175,9 +186,20 @@ export async function DELETE(_request: Request, context: RouteContext) {
           where: { id },
           data: { isAvailable: false },
         });
+        await writeAuditLog(transaction, access, {
+          action: "MENU_ITEM_ARCHIVED",
+          entityType: "MenuItem",
+          entityId: id,
+          details: { reason: "HasOrderHistory" },
+        });
         return "unavailable" as const;
       }
       await transaction.menuItem.delete({ where: { id } });
+      await writeAuditLog(transaction, access, {
+        action: "MENU_ITEM_DELETED",
+        entityType: "MenuItem",
+        entityId: id,
+      });
       return "deleted" as const;
     });
 
@@ -198,9 +220,18 @@ export async function DELETE(_request: Request, context: RouteContext) {
       }
       if (error.code === "P2003") {
         try {
-          await prisma.menuItem.update({
-            where: { id: (await context.params).id },
-            data: { isAvailable: false },
+          const itemId = (await context.params).id;
+          await prisma.$transaction(async (transaction) => {
+            await transaction.menuItem.update({
+              where: { id: itemId },
+              data: { isAvailable: false },
+            });
+            await writeAuditLog(transaction, access, {
+              action: "MENU_ITEM_ARCHIVED",
+              entityType: "MenuItem",
+              entityId: itemId,
+              details: { reason: "ReferencedByOrder" },
+            });
           });
           return NextResponse.json({
             message:

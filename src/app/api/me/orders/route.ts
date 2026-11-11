@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/rbac";
 import { myOrdersQuerySchema } from "@/lib/validations/order";
 
 const PAGE_SIZE = 20;
 
 export async function GET(request: Request) {
-  const session = await auth();
-  if (!session?.user.id) {
-    return NextResponse.json({ error: "Chưa đăng nhập" }, { status: 401 });
+  const actor = await requireRole(["CUSTOMER"], "api");
+  if (actor instanceof NextResponse) {
+    return actor;
   }
 
   const url = new URL(request.url);
@@ -28,9 +28,9 @@ export async function GET(request: Request) {
   const page = parsed.data.page;
   try {
     const [total, orders] = await prisma.$transaction([
-      prisma.order.count({ where: { userId: session.user.id } }),
+      prisma.order.count({ where: { userId: actor.id } }),
       prisma.order.findMany({
-        where: { userId: session.user.id },
+        where: { userId: actor.id },
         orderBy: { createdAt: "desc" },
         skip: (page - 1) * PAGE_SIZE,
         take: PAGE_SIZE,
@@ -45,9 +45,11 @@ export async function GET(request: Request) {
           createdAt: true,
           items: {
             select: {
+              id: true,
               name: true,
               quantity: true,
               options: true,
+              reviews: { select: { id: true } },
             },
           },
           payment: {

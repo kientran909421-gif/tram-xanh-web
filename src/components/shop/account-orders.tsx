@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { formatVND } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,8 @@ type AccountOrder = {
     | "READY"
     | "DELIVERING"
     | "COMPLETED"
-    | "CANCELLED";
+    | "CANCELLED"
+    | "REFUNDED";
   type: "TAKEAWAY" | "DELIVERY";
   subtotal: number;
   discount: number;
@@ -23,9 +24,11 @@ type AccountOrder = {
   total: number;
   createdAt: string;
   items: Array<{
+    id: string;
     name: string;
     quantity: number;
     options: unknown;
+    reviews: { id: string }[];
   }>;
   payment: { method: string; status: string } | null;
 };
@@ -48,6 +51,7 @@ const statusLabels: Record<AccountOrder["status"], string> = {
   DELIVERING: "Đang giao",
   COMPLETED: "Hoàn tất",
   CANCELLED: "Đã hủy",
+  REFUNDED: "Đã hoàn tiền",
 };
 
 const statusStyles: Record<AccountOrder["status"], string> = {
@@ -58,6 +62,7 @@ const statusStyles: Record<AccountOrder["status"], string> = {
   DELIVERING: "bg-violet-100 text-violet-900",
   COMPLETED: "bg-green-100 text-green-900",
   CANCELLED: "bg-red-100 text-red-900",
+  REFUNDED: "bg-muted text-muted-foreground",
 };
 
 function optionNames(value: unknown): string[] {
@@ -89,6 +94,7 @@ export function AccountOrders() {
   const [expandedCode, setExpandedCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [refreshIndex, setRefreshIndex] = useState(0);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -127,7 +133,7 @@ export function AccountOrders() {
 
     void loadOrders();
     return () => controller.abort();
-  }, [page]);
+  }, [page, refreshIndex]);
 
   const goToPage = useCallback(
     (nextPage: number) => {
@@ -142,6 +148,28 @@ export function AccountOrders() {
     },
     [pathname, router, searchParams],
   );
+
+  async function cancelOrder(code: string) {
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/me/orders/${encodeURIComponent(code)}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "CANCEL" }),
+        },
+      );
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(result.error ?? "Không thể hủy đơn hàng");
+        return;
+      }
+      setRefreshIndex((current) => current + 1);
+    } catch {
+      setError("Không thể kết nối máy chủ");
+    }
+  }
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
@@ -246,6 +274,15 @@ export function AccountOrders() {
                                   {optionNames(item.options).join(", ")}
                                 </span>
                               ) : null}
+                              {order.status === "COMPLETED" &&
+                              item.reviews.length === 0 ? (
+                                <ReviewEntry
+                                  orderItemId={item.id}
+                                  onSubmitted={() =>
+                                    setRefreshIndex((current) => current + 1)
+                                  }
+                                />
+                              ) : null}
                             </span>
                           </li>
                         ))}
@@ -268,6 +305,17 @@ export function AccountOrders() {
                           Tra cứu đơn hàng
                         </Link>
                       </div>
+                    </div>
+                  ) : null}
+                  {order.status === "PENDING" ? (
+                    <div className="border-t border-muted px-5 py-3">
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        onClick={() => void cancelOrder(order.code)}
+                      >
+                        Hủy đơn
+                      </Button>
                     </div>
                   ) : null}
                 </article>
@@ -301,5 +349,69 @@ export function AccountOrders() {
         </>
       )}
     </main>
+  );
+}
+
+function ReviewEntry({
+  orderItemId,
+  onSubmitted,
+}: {
+  orderItemId: string;
+  onSubmitted: () => void;
+}) {
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const values = new FormData(form);
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch("/api/me/reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderItemId,
+          rating: Number(values.get("rating")),
+          comment: values.get("comment"),
+        }),
+      });
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(result.error ?? "Không thể gửi đánh giá");
+        return;
+      }
+      form.reset();
+      onSubmitted();
+    } catch {
+      setError("Không thể kết nối máy chủ");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form className="mt-3 grid gap-2 rounded-lg bg-background p-3" onSubmit={submit}>
+      <label className="grid gap-1 text-xs font-medium">
+        Đánh giá món
+        <select className="rounded-md border border-border bg-card px-2 py-1.5" name="rating" defaultValue="5">
+          {[5, 4, 3, 2, 1].map((rating) => (
+            <option key={rating} value={rating}>{rating} sao</option>
+          ))}
+        </select>
+      </label>
+      <textarea
+        className="min-h-16 rounded-md border border-border bg-card px-2 py-1.5 text-xs"
+        name="comment"
+        placeholder="Chia sẻ cảm nhận (không bắt buộc)"
+        maxLength={1000}
+      />
+      {error ? <p className="text-xs text-red-700" role="alert">{error}</p> : null}
+      <Button className="w-fit" type="submit" size="sm" disabled={saving}>
+        {saving ? "Đang gửi..." : "Gửi đánh giá"}
+      </Button>
+    </form>
   );
 }

@@ -33,6 +33,45 @@ const credentialsSchema = z.object({
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
+  events: {
+    async signIn({ user }) {
+      if (!user.id || !user.role) {
+        throw new Error("Cannot audit sign-in without user identity and role");
+      }
+      await prisma.auditLog.create({
+        data: {
+          actorId: user.id,
+          actorEmail: user.email,
+          actorRole: user.role,
+          action: "AUTH_SIGN_IN",
+          entityType: "User",
+          entityId: user.id,
+        },
+      });
+    },
+    async signOut(message) {
+      const token = "token" in message ? message.token : null;
+      const actorId = typeof token?.id === "string" ? token.id : null;
+      const actorRole = token?.role;
+      await prisma.auditLog.create({
+        data: {
+          actorId,
+          actorEmail: typeof token?.email === "string" ? token.email : null,
+          actorRole:
+            actorRole === "ADMIN" ||
+            actorRole === "MANAGER" ||
+            actorRole === "CASHIER" ||
+            actorRole === "BARISTA" ||
+            actorRole === "CUSTOMER"
+              ? actorRole
+              : null,
+          action: "AUTH_SIGN_OUT",
+          entityType: "User",
+          entityId: actorId,
+        },
+      });
+    },
+  },
   providers: [
     Credentials({
       credentials: {

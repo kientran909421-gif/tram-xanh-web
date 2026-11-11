@@ -3,6 +3,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { adminPermissions } from "@/lib/permissions";
 import { requireRole } from "@/lib/rbac";
+import { writeAuditLog } from "@/lib/audit-log";
 import {
   adminMenuQuerySchema,
   createMenuSchema,
@@ -110,14 +111,21 @@ export async function POST(request: Request) {
         transaction,
         parsed.data.slug ?? parsed.data.name,
       );
-      return transaction.menuItem.create({
+      const item = await transaction.menuItem.create({
         data: {
           ...parsed.data,
           slug,
           description: parsed.data.description || null,
           imageUrl: parsed.data.imageUrl || null,
           options: {
-            create: parsed.data.options.map(({ id: _id, ...option }) => option),
+            create: parsed.data.options.map(
+              ({ group, name, priceDelta, isAvailable }) => ({
+                group,
+                name,
+                priceDelta,
+                isAvailable,
+              }),
+            ),
           },
         },
         include: {
@@ -125,6 +133,13 @@ export async function POST(request: Request) {
           options: true,
         },
       });
+      await writeAuditLog(transaction, access, {
+        action: "MENU_ITEM_CREATED",
+        entityType: "MenuItem",
+        entityId: item.id,
+        details: { name: item.name, price: item.price },
+      });
+      return item;
     });
     return NextResponse.json({ item: created }, { status: 201 });
   } catch (error) {

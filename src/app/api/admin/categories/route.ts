@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { adminPermissions } from "@/lib/permissions";
 import { requireRole } from "@/lib/rbac";
+import { writeAuditLog } from "@/lib/audit-log";
 import { createCategorySchema } from "@/lib/validations/category";
 
 export async function GET() {
@@ -59,9 +60,18 @@ export async function POST(request: Request) {
   }
 
   try {
-    const category = await prisma.category.create({
-      data: parsed.data,
-      select: { id: true, name: true, slug: true, sortOrder: true },
+    const category = await prisma.$transaction(async (transaction) => {
+      const created = await transaction.category.create({
+        data: parsed.data,
+        select: { id: true, name: true, slug: true, sortOrder: true },
+      });
+      await writeAuditLog(transaction, access, {
+        action: "CATEGORY_CREATED",
+        entityType: "Category",
+        entityId: created.id,
+        details: { name: created.name, slug: created.slug },
+      });
+      return created;
     });
     return NextResponse.json({ category }, { status: 201 });
   } catch (error) {

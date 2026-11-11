@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Coffee01Icon } from "@hugeicons/core-free-icons";
 import { Dialog } from "@base-ui/react/dialog";
@@ -11,9 +11,121 @@ import { Button } from "@/components/ui/button";
 
 type MenuOption = MenuItemWithOptions["options"][number];
 
+type ReviewData = {
+  averageRating: number | null;
+  total: number;
+  reviews: {
+    id: string;
+    rating: number;
+    comment: string | null;
+    createdAt: string;
+    user: { name: string };
+  }[];
+};
+
+function SingleOptionGroup({
+  itemId,
+  title,
+  options,
+  selectedId,
+  onSelect,
+}: {
+  itemId: string;
+  title: string;
+  options: MenuOption[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+}) {
+  if (options.length === 0) {
+    return null;
+  }
+
+  return (
+    <fieldset>
+      <legend className="mb-3 text-sm font-semibold text-foreground">
+        {title} <span className="font-normal text-muted-foreground">· Chọn 1</span>
+      </legend>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {options.map((option) => (
+          <label
+            className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-background"
+            key={option.id}
+          >
+            <span className="flex items-center gap-3">
+              <input
+                type="radio"
+                name={`${option.group}-${itemId}`}
+                value={option.id}
+                checked={selectedId === option.id}
+                onChange={() => onSelect(option.id)}
+                className="accent-primary"
+              />
+              <span className="text-sm font-medium text-foreground">
+                {option.name}
+              </span>
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {option.priceDelta > 0
+                ? `+${formatVND(option.priceDelta)}`
+                : "Không phụ thu"}
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function ItemReviews({ slug }: { slug: string }) {
+  const [data, setData] = useState<ReviewData | null>(null);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch(`/api/menu/${encodeURIComponent(slug)}/reviews`, {
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        const result = (await response.json()) as ReviewData & { error?: string };
+        if (!response.ok) {
+          throw new Error(result.error ?? "Không thể tải đánh giá");
+        }
+        setData(result);
+      })
+      .catch((error: unknown) => {
+        if (!(error instanceof DOMException && error.name === "AbortError")) {
+          console.error("Failed to load menu item reviews:", error);
+        }
+      });
+    return () => controller.abort();
+  }, [slug]);
+
+  if (!data || data.total === 0) {
+    return null;
+  }
+
+  return (
+    <section className="mt-4 border-t border-border pt-4">
+      <h3 className="text-sm font-semibold text-foreground">
+        Đánh giá · {data.averageRating?.toFixed(1)} / 5 ({data.total})
+      </h3>
+      <ul className="mt-2 grid gap-2">
+        {data.reviews.slice(0, 3).map((review) => (
+          <li className="rounded-lg bg-background p-3 text-sm" key={review.id}>
+            <p className="font-medium">
+              {review.user.name} · {review.rating}/5
+            </p>
+            {review.comment ? (
+              <p className="mt-1 text-muted-foreground">{review.comment}</p>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 export type MenuSelection = {
-  size: MenuOption | null;
-  toppings: MenuOption[];
+  options: MenuOption[];
   quantity: number;
   note: string;
   unitPrice: number;
@@ -60,24 +172,42 @@ function MenuItemDialogContent({
   onAdd: (item: MenuItemWithOptions, selection: MenuSelection) => void;
 }) {
   const sizeOptions = item.options.filter((option) => option.group === "SIZE");
+  const iceOptions = item.options.filter((option) => option.group === "ICE");
+  const sugarOptions = item.options.filter((option) => option.group === "SUGAR");
   const toppingOptions = item.options.filter(
     (option) => option.group === "TOPPING",
   );
   const [selectedSizeId, setSelectedSizeId] = useState(
     sizeOptions[0]?.id ?? "",
   );
+  const [selectedIceId, setSelectedIceId] = useState(
+    iceOptions.find((option) => option.name === "Bình thường")?.id ??
+      iceOptions[0]?.id ??
+      "",
+  );
+  const [selectedSugarId, setSelectedSugarId] = useState(
+    sugarOptions.find((option) => option.name === "Bình thường")?.id ??
+      sugarOptions[0]?.id ??
+      "",
+  );
   const [selectedToppingIds, setSelectedToppingIds] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
   const [note, setNote] = useState("");
   const selectedSize =
     sizeOptions.find((option) => option.id === selectedSizeId) ?? null;
+  const selectedIce =
+    iceOptions.find((option) => option.id === selectedIceId) ?? null;
+  const selectedSugar =
+    sugarOptions.find((option) => option.id === selectedSugarId) ?? null;
   const selectedToppings = toppingOptions.filter((option) =>
     selectedToppingIds.includes(option.id),
   );
   const unitPrice =
     item.price +
-    (selectedSize?.priceDelta ?? 0) +
-    selectedToppings.reduce((total, option) => total + option.priceDelta, 0);
+    [selectedSize, selectedIce, selectedSugar, ...selectedToppings].reduce(
+      (total, option) => total + (option?.priceDelta ?? 0),
+      0,
+    );
   const totalPrice = unitPrice * quantity;
 
   function toggleTopping(option: MenuOption) {
@@ -89,13 +219,23 @@ function MenuItemDialogContent({
   }
 
   function handleAdd() {
-    if (!item || !item.isAvailable || (sizeOptions.length > 0 && !selectedSize)) {
+    if (
+      !item ||
+      !item.isAvailable ||
+      (sizeOptions.length > 0 && !selectedSize) ||
+      (iceOptions.length > 0 && !selectedIce) ||
+      (sugarOptions.length > 0 && !selectedSugar)
+    ) {
       return;
     }
 
     onAdd(item, {
-      size: selectedSize,
-      toppings: selectedToppings,
+      options: [
+        ...[selectedSize, selectedIce, selectedSugar].filter(
+          (option): option is MenuOption => option !== null,
+        ),
+        ...selectedToppings,
+      ],
       quantity,
       note: note.trim(),
       unitPrice,
@@ -103,8 +243,6 @@ function MenuItemDialogContent({
     });
     onOpenChange(false);
   }
-
-  const hasSizeOptions = sizeOptions.length > 0;
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -164,42 +302,30 @@ function MenuItemDialogContent({
                   {item.description}
                 </Dialog.Description>
               ) : null}
+              <ItemReviews slug={item.slug} />
             </div>
 
-            {hasSizeOptions ? (
-              <fieldset>
-                <legend className="mb-3 text-sm font-semibold text-foreground">
-                  Kích cỡ <span className="font-normal text-muted-foreground">· Chọn 1</span>
-                </legend>
-                <div className="grid gap-2 sm:grid-cols-2">
-                  {sizeOptions.map((option) => (
-                    <label
-                      className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-background"
-                      key={option.id}
-                    >
-                      <span className="flex items-center gap-3">
-                        <input
-                          type="radio"
-                          name={`size-${item.id}`}
-                          value={option.id}
-                          checked={selectedSizeId === option.id}
-                          onChange={() => setSelectedSizeId(option.id)}
-                          className="accent-primary"
-                        />
-                        <span className="text-sm font-medium text-foreground">
-                          {option.name}
-                        </span>
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {option.priceDelta > 0
-                          ? `+${formatVND(option.priceDelta)}`
-                          : "Không phụ thu"}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-            ) : null}
+            <SingleOptionGroup
+              itemId={item.id}
+              title="Kích cỡ"
+              options={sizeOptions}
+              selectedId={selectedSizeId}
+              onSelect={setSelectedSizeId}
+            />
+            <SingleOptionGroup
+              itemId={item.id}
+              title="Lượng đá"
+              options={iceOptions}
+              selectedId={selectedIceId}
+              onSelect={setSelectedIceId}
+            />
+            <SingleOptionGroup
+              itemId={item.id}
+              title="Lượng đường"
+              options={sugarOptions}
+              selectedId={selectedSugarId}
+              onSelect={setSelectedSugarId}
+            />
 
             {toppingOptions.length > 0 ? (
               <fieldset>
@@ -279,7 +405,9 @@ function MenuItemDialogContent({
                 onClick={handleAdd}
                 disabled={
                   !item.isAvailable ||
-                  (sizeOptions.length > 0 && !selectedSize)
+                  (sizeOptions.length > 0 && !selectedSize) ||
+                  (iceOptions.length > 0 && !selectedIce) ||
+                  (sugarOptions.length > 0 && !selectedSugar)
                 }
               >
                 {item.isAvailable ? "Thêm vào giỏ" : "Hết hàng"}

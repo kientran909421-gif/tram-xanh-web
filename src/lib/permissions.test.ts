@@ -1,0 +1,48 @@
+import { describe, expect, it } from "vitest";
+import {
+  canManageRole,
+  canTransitionOrder,
+  getVisibleAdminNavigation,
+} from "./permissions";
+
+describe("role permissions", () => {
+  it("limits manager account assignment to cashier and barista", () => {
+    expect(canManageRole("MANAGER", "CASHIER")).toBe(true);
+    expect(canManageRole("MANAGER", "BARISTA")).toBe(true);
+    expect(canManageRole("MANAGER", "ADMIN")).toBe(false);
+    expect(canManageRole("MANAGER", "CUSTOMER")).toBe(false);
+    expect(canManageRole("CUSTOMER", "CASHIER")).toBe(false);
+  });
+
+  it("shows staff navigation only for sections their role can access", () => {
+    const cashierLinks = getVisibleAdminNavigation("CASHIER").map(
+      (item) => item.href,
+    );
+    const managerLinks = getVisibleAdminNavigation("MANAGER").map(
+      (item) => item.href,
+    );
+    const adminLinks = getVisibleAdminNavigation("ADMIN").map(
+      (item) => item.href,
+    );
+    expect(cashierLinks).toContain("/admin/orders");
+    expect(cashierLinks).toContain("/cashier");
+    expect(cashierLinks).not.toContain("/admin");
+    expect(cashierLinks).not.toContain("/admin/staff");
+    expect(cashierLinks).not.toContain("/admin/settings");
+    expect(managerLinks).toContain("/admin/reports");
+    expect(managerLinks).not.toContain("/admin/settings");
+    expect(managerLinks).not.toContain("/admin/reviews");
+    expect(adminLinks).toContain("/admin/settings");
+    expect(adminLinks).toContain("/admin/reviews");
+  });
+
+  it("enforces role-specific order transitions", () => {
+    expect(canTransitionOrder("CASHIER", "PENDING", "CONFIRMED")).toBe(true);
+    expect(canTransitionOrder("CASHIER", "PENDING", "CANCELLED")).toBe(true);
+    expect(canTransitionOrder("CASHIER", "CONFIRMED", "CANCELLED")).toBe(false);
+    expect(canTransitionOrder("BARISTA", "PENDING", "CONFIRMED")).toBe(false);
+    expect(canTransitionOrder("BARISTA", "CONFIRMED", "PREPARING")).toBe(true);
+    expect(canTransitionOrder("CASHIER", "COMPLETED", "REFUNDED")).toBe(false);
+    expect(canTransitionOrder("MANAGER", "COMPLETED", "REFUNDED")).toBe(true);
+  });
+});

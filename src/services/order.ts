@@ -9,6 +9,8 @@ import type { CreateOrderInput } from "@/lib/validations/order";
 import { generateOrderCode } from "@/lib/order-code";
 import { validatePromotion } from "@/services/promotion";
 import { computeTotals } from "@/services/order-pricing";
+import { writeAuditLog, type AuditActor } from "@/lib/audit-log";
+import { DELIVERY_FEE } from "@/lib/site";
 
 export class OrderError extends Error {
   constructor(
@@ -46,15 +48,11 @@ type CreatedOrder = { code: string; total: number };
 
 async function createOrderAttempt(
   input: CreateOrderInput,
-  userId: string | undefined,
+  actor: AuditActor | undefined,
   code: string,
 ): Promise<CreatedOrder> {
   return prisma.$transaction(async (transaction) => {
     const menuItemIds = [...new Set(input.items.map((item) => item.menuItemId))];
-    const optionIds = [
-      ...new Set(input.items.flatMap((item) => item.optionIds)),
-    ];
-
     const menuItems = await transaction.menuItem.findMany({
       where: { id: { in: menuItemIds } },
       select: {
@@ -64,7 +62,6 @@ async function createOrderAttempt(
         imageUrl: true,
         isAvailable: true,
         options: {
-          where: { id: { in: optionIds } },
           select: {
             id: true,
             menuItemId: true,
@@ -82,6 +79,9 @@ async function createOrderAttempt(
       const menuItem = menuItemById.get(line.menuItemId);
       if (!menuItem) {
         throw new OrderError(400, "Một hoặc nhiều món không tồn tại.");
+      }
+      if (new Set(line.optionIds).size !== line.optionIds.length) {
+        throw new OrderError(400, `Tùy chọn của món "${menuItem.name}" bị trùng.`);
       }
 
       if (!menuItem.isAvailable) {
@@ -110,12 +110,46 @@ async function createOrderAttempt(
         return option;
       });
 
-      if (options.filter((option) => option.group === OptionGroup.SIZE).length > 1) {
-        throw new OrderError(400, `Chỉ được chọn một kích cỡ cho món "${menuItem.name}".`);
+      for (const group of [OptionGroup.SIZE, OptionGroup.ICE, OptionGroup.SUGAR]) {
+        const groupOptions = menuItem.options.filter(
+          (option) => option.group === group && option.isAvailable,
+        );
+        const selectedGroupOptions = options.filter(
+          (option) => option.group === group,
+        );
+        if (
+          selectedGroupOptions.length > 1 ||
+          (groupOptions.length > 0 && selectedGroupOptions.length !== 1)
+        ) {
+          throw new OrderError(
+            400,
+            `Vui lòng chọn một tùy chọn ${group.toLowerCase()} cho món "${menuItem.name}".`,
+          );
+        }
       }
 
       return { input: line, menuItem, options };
     });
+
+    const storeSettings = await transaction.storeSettings.findUnique({
+      where: { id: "store" },
+      select: {
+        deliveryFee: true,
+        allowCash: true,
+        allowBankTransfer: true,
+        allowMomo: true,
+      },
+    });
+    const paymentAllowed =
+      input.paymentMethod === "CASH"
+        ? storeSettings?.allowCash ?? true
+        : input.paymentMethod === "BANK_TRANSFER"
+          ? storeSettings?.allowBankTransfer ?? true
+          : storeSettings?.allowMomo ?? true;
+    if (!paymentAllowed) {
+      throw new OrderError(409, "Phương thức thanh toán này hiện không khả dụng.");
+    }
+    const deliveryFee = storeSettings?.deliveryFee ?? DELIVERY_FEE;
 
     const baseTotals = computeTotals(
       orderLines.map(({ input: line, menuItem, options }) => ({
@@ -125,6 +159,7 @@ async function createOrderAttempt(
       })),
       null,
       input.type,
+      deliveryFee,
     );
 
     let promotion:
@@ -166,6 +201,7 @@ async function createOrderAttempt(
           }
         : null,
       input.type,
+      deliveryFee,
     );
 
     if (promotion) {
@@ -201,10 +237,18 @@ async function createOrderAttempt(
         }),
       );
 
-    await transaction.order.create({
+    const createdOrder = await transaction.order.create({
       data: {
         code,
-        ...(userId ? { user: { connect: { id: userId } } } : {}),
+        ...(actor?.role === "CUSTOMER"
+          ? { user: { connect: { id: actor.id } } }
+          : {}),
+        ...(actor?.id
+          ? { createdBy: { connect: { id: actor.id } } }
+          : {}),
+        ...(actor?.role === "CASHIER"
+          ? { assignedCashier: { connect: { id: actor.id } } }
+          : {}),
         customerName: input.customerName,
         customerPhone: input.customerPhone,
         type: input.type,
@@ -227,6 +271,17 @@ async function createOrderAttempt(
       },
       select: { code: true, total: true },
     });
+    await writeAuditLog(transaction, actor ?? null, {
+      action: "ORDER_CREATED",
+      entityType: "Order",
+      entityId: createdOrder.code,
+      details: {
+        status: "PENDING",
+        total: totals.total,
+        source: actor?.role === "CASHIER" ? "counter" : "checkout",
+        guestOrder: !actor,
+      },
+    });
 
     return { code, total: totals.total };
   });
@@ -234,12 +289,12 @@ async function createOrderAttempt(
 
 export async function createOrder(
   input: CreateOrderInput,
-  userId?: string,
+  actor?: AuditActor,
 ): Promise<CreatedOrder> {
   for (let attempt = 0; attempt <= 5; attempt += 1) {
     const code = generateOrderCode();
     try {
-      return await createOrderAttempt(input, userId, code);
+      return await createOrderAttempt(input, actor, code);
     } catch (error) {
       if (isOrderCodeConflict(error) && attempt < 5) {
         continue;

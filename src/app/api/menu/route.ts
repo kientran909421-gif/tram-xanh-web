@@ -8,7 +8,8 @@ export async function GET(request: Request) {
   const parsed = menuQuerySchema.safeParse({
     category: url.searchParams.get("category") ?? undefined,
     q: url.searchParams.get("q") ?? undefined,
-    available: url.searchParams.get("available") ?? undefined,
+    minPrice: url.searchParams.get("minPrice") ?? undefined,
+    maxPrice: url.searchParams.get("maxPrice") ?? undefined,
   });
 
   if (!parsed.success) {
@@ -21,14 +22,20 @@ export async function GET(request: Request) {
     );
   }
 
-  const { category, q, available } = parsed.data;
+  const { category, q, minPrice, maxPrice } = parsed.data;
   try {
     const items = await prisma.menuItem.findMany({
       where: {
+        isAvailable: true,
         ...(category ? { category: { slug: category } } : {}),
         ...(q ? { name: { contains: q, mode: "insensitive" } } : {}),
-        ...(available !== undefined
-          ? { isAvailable: available === "true" }
+        ...(minPrice !== undefined || maxPrice !== undefined
+          ? {
+              price: {
+                ...(minPrice !== undefined ? { gte: minPrice } : {}),
+                ...(maxPrice !== undefined ? { lte: maxPrice } : {}),
+              },
+            }
           : {}),
       },
       orderBy: [{ name: "asc" }],

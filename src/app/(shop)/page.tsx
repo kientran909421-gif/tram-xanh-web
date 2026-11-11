@@ -63,6 +63,66 @@ function InfoCard({
   );
 }
 
+async function StoreContactInfo() {
+  const settings = await prisma.storeSettings.findUnique({
+    where: { id: "store" },
+    select: {
+      storeName: true,
+      address: true,
+      phone: true,
+      email: true,
+      openingTime: true,
+      closingTime: true,
+    },
+  });
+  const name = settings?.storeName ?? SITE_INFO.name;
+  const address = settings?.address ?? SITE_INFO.address;
+  const phone = settings?.phone ?? SITE_INFO.phone;
+  const email = settings?.email ?? SITE_INFO.email;
+  const openingTime = settings?.openingTime ?? SITE_INFO.openingHours.opensAt;
+  const closingTime = settings?.closingTime ?? SITE_INFO.openingHours.closesAt;
+  const mapQuery = encodeURIComponent(address);
+
+  return (
+    <>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <InfoCard icon={Clock01Icon} title="Giờ mở cửa">
+          Hằng ngày, {openingTime} – {closingTime}
+        </InfoCard>
+        <InfoCard icon={Location01Icon} title="Địa chỉ">
+          <a
+            className="hover:text-primary"
+            href={`https://www.google.com/maps/search/?api=1&query=${mapQuery}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {address}
+          </a>
+        </InfoCard>
+        <InfoCard icon={Call02Icon} title="Điện thoại">
+          <a className="hover:text-primary" href={`tel:${phone}`}>
+            {phone}
+          </a>
+        </InfoCard>
+        <InfoCard icon={Mail01Icon} title="Email">
+          <a className="hover:text-primary" href={`mailto:${email}`}>
+            {email}
+          </a>
+        </InfoCard>
+      </div>
+      <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background">
+        <iframe
+          className="h-72 w-full sm:h-96"
+          src={`https://www.google.com/maps?q=${mapQuery}&output=embed`}
+          title={`Bản đồ vị trí ${name}`}
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+        />
+      </div>
+    </>
+  );
+}
+
 export default function Home() {
   return (
     <main>
@@ -129,40 +189,9 @@ export default function Home() {
             Luôn sẵn sàng đón bạn
           </h2>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <InfoCard icon={Clock01Icon} title="Giờ mở cửa">
-            {SITE_INFO.openingHours.label}
-          </InfoCard>
-          <InfoCard icon={Location01Icon} title="Địa chỉ">
-            <a
-              className="hover:text-primary"
-              href={SITE_INFO.googleMapsUrl}
-              target="_blank"
-              rel="noreferrer"
-            >
-              {SITE_INFO.address}
-            </a>
-          </InfoCard>
-          <InfoCard icon={Call02Icon} title="Điện thoại">
-            <a className="hover:text-primary" href={`tel:${SITE_INFO.phone}`}>
-              {SITE_INFO.phone}
-            </a>
-          </InfoCard>
-          <InfoCard icon={Mail01Icon} title="Email">
-            <a className="hover:text-primary" href={`mailto:${SITE_INFO.email}`}>
-              {SITE_INFO.email}
-            </a>
-          </InfoCard>
-        </div>
-        <div className="mt-6 overflow-hidden rounded-2xl border border-border bg-background">
-          <iframe
-            className="h-72 w-full sm:h-96"
-            src={SITE_INFO.googleMapsEmbedUrl}
-            title={`Bản đồ vị trí ${SITE_INFO.name}`}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-          />
-        </div>
+        <Suspense fallback={<p className="text-muted-foreground">Đang tải thông tin cửa hàng...</p>}>
+          <StoreContactInfo />
+        </Suspense>
       </section>
     </main>
   );

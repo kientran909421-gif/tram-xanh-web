@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input";
 import { CartItems } from "@/components/shop/cart-items";
 import { useCartStore } from "@/stores/cart";
 import { calcSubtotal } from "@/lib/cart-utils";
-import { DELIVERY_FEE } from "@/lib/site";
 import { formatVND } from "@/lib/utils";
 import { orderDetailsSchema } from "@/lib/validations/order";
 
@@ -29,24 +28,47 @@ type PromotionResponse =
 export function CheckoutForm({
   initialName,
   initialPhone,
+  deliveryFee: configuredDeliveryFee,
+  paymentMethods,
+  savedAddresses,
 }: {
   initialName: string;
   initialPhone: string;
+  deliveryFee: number;
+  paymentMethods: Record<CheckoutValues["paymentMethod"], boolean>;
+  savedAddresses: {
+    id: string;
+    label: string;
+    address: string;
+    isDefault: boolean;
+  }[];
 }) {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
   const hasHydrated = useCartStore((state) => state.hasHydrated);
   const clearCart = useCartStore((state) => state.clear);
   const subtotal = hasHydrated ? calcSubtotal(items) : 0;
+  const defaultAddress =
+    savedAddresses.find((address) => address.isDefault) ?? savedAddresses[0];
+  const [selectedAddressId, setSelectedAddressId] = useState(
+    defaultAddress?.id ?? "",
+  );
+  const availablePaymentMethods = (
+    [
+      ["CASH", "Tiền mặt"],
+      ["BANK_TRANSFER", "Chuyển khoản"],
+      ["MOMO", "MoMo"],
+    ] as const
+  ).filter(([method]) => paymentMethods[method]);
   const form = useForm<CheckoutValues>({
     resolver: zodResolver(orderDetailsSchema),
     defaultValues: {
       type: "TAKEAWAY",
       customerName: initialName,
       customerPhone: initialPhone,
-      address: "",
+      address: defaultAddress?.address ?? "",
       note: "",
-      paymentMethod: "CASH",
+      paymentMethod: availablePaymentMethods[0]?.[0] ?? "CASH",
       promoCode: "",
     },
   });
@@ -64,14 +86,16 @@ export function CheckoutForm({
   const [promotionMessage, setPromotionMessage] = useState("");
   const [validatingPromotion, setValidatingPromotion] = useState(false);
   const [submitError, setSubmitError] = useState("");
+  const [orderCreated, setOrderCreated] = useState(false);
 
   useEffect(() => {
-    if (hasHydrated && items.length === 0) {
+    if (hasHydrated && items.length === 0 && !orderCreated) {
       router.replace("/menu");
     }
-  }, [hasHydrated, items.length, router]);
+  }, [hasHydrated, items.length, orderCreated, router]);
 
-  const deliveryFee = orderType === "DELIVERY" ? DELIVERY_FEE : 0;
+  const deliveryFee =
+    orderType === "DELIVERY" ? configuredDeliveryFee : 0;
   const discount =
     promotion && validatedSubtotal === subtotal ? promotionDiscount : 0;
   const total = Math.max(0, subtotal - discount + deliveryFee);
@@ -161,10 +185,11 @@ export function CheckoutForm({
         return;
       }
 
-      
+      setOrderCreated(true);
+      clearCart();
       router.push(
-  `/thank-you?code=${encodeURIComponent(result.code)}&phone=${encodeURIComponent(values.customerPhone)}`,
-);
+        `/thank-you?code=${encodeURIComponent(result.code)}&phone=${encodeURIComponent(values.customerPhone)}`,
+      );
     } catch {
       setSubmitError("Không thể kết nối máy chủ. Vui lòng thử lại.");
     }
@@ -219,18 +244,41 @@ export function CheckoutForm({
                   className="accent-primary"
                 />
                 <span className="text-sm font-medium">
-                  Giao hàng · {formatVND(DELIVERY_FEE)}
+                  Giao hàng · {formatVND(configuredDeliveryFee)}
                 </span>
               </label>
             </fieldset>
             {orderType === "DELIVERY" ? (
               <label className="grid gap-2 text-sm font-medium text-foreground">
                 Địa chỉ giao hàng
+                {savedAddresses.length > 0 ? (
+                  <select
+                    className="rounded-xl border border-border bg-card px-3 py-2 text-sm"
+                    value={selectedAddressId}
+                    onChange={(event) => {
+                      const address = savedAddresses.find(
+                        (item) => item.id === event.target.value,
+                      );
+                      setSelectedAddressId(event.target.value);
+                      form.setValue("address", address?.address ?? "", {
+                        shouldValidate: true,
+                      });
+                    }}
+                  >
+                    {savedAddresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {address.label}
+                      </option>
+                    ))}
+                  </select>
+                ) : null}
                 <textarea
                   className="min-h-20 rounded-xl border border-border bg-card px-3 py-2 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."
                   maxLength={500}
-                  {...form.register("address")}
+                  {...form.register("address", {
+                    onChange: () => setSelectedAddressId(""),
+                  })}
                 />
                 {form.formState.errors.address?.message ? (
                   <span className="text-sm text-red-700">
@@ -282,13 +330,7 @@ export function CheckoutForm({
             <h2 className="text-lg font-semibold text-foreground">
               Phương thức thanh toán
             </h2>
-            {(
-              [
-                ["CASH", "Tiền mặt"],
-                ["BANK_TRANSFER", "Chuyển khoản"],
-                ["MOMO", "MoMo"],
-              ] as const
-            ).map(([method, label]) => (
+            {availablePaymentMethods.map(([method, label]) => (
               <label
                 className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-background"
                 key={method}
@@ -302,6 +344,11 @@ export function CheckoutForm({
                 <span className="text-sm font-medium">{label}</span>
               </label>
             ))}
+            {availablePaymentMethods.length === 0 ? (
+              <p className="text-sm text-red-700" role="alert">
+                Hiện chưa có phương thức thanh toán khả dụng.
+              </p>
+            ) : null}
             {paymentMethod !== "CASH" ? (
               <p className="rounded-lg bg-background px-4 py-3 text-sm text-primary">
                 Nhân viên sẽ liên hệ xác nhận thanh toán.
@@ -383,7 +430,9 @@ export function CheckoutForm({
           <Button
             className="h-11 bg-primary text-primary-foreground hover:bg-primary"
             type="submit"
-            disabled={form.formState.isSubmitting}
+            disabled={
+              form.formState.isSubmitting || availablePaymentMethods.length === 0
+            }
           >
             {form.formState.isSubmitting
               ? "Đang tạo đơn hàng..."

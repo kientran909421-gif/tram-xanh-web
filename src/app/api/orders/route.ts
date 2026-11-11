@@ -2,8 +2,26 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { createOrder, OrderError } from "@/services/order";
 import { createOrderSchema } from "@/lib/validations/order";
+import { rolePermissions } from "@/lib/permissions";
+import { requireRole } from "@/lib/rbac";
+import type { AuthRole } from "@/lib/auth.config";
+import type { Session } from "next-auth";
 
 export async function POST(request: Request) {
+  const session = await auth();
+  let actor: Session["user"] | undefined;
+  if (session?.user.id) {
+    const allowedCreators: readonly AuthRole[] = [
+      ...rolePermissions.counterOrders,
+      "CUSTOMER",
+    ];
+    const access = await requireRole(allowedCreators, "api");
+    if (access instanceof NextResponse) {
+      return access;
+    }
+    actor = access;
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -26,8 +44,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const session = await auth();
-    const order = await createOrder(parsed.data, session?.user.id);
+    const order = await createOrder(parsed.data, actor);
     return NextResponse.json(order, { status: 201 });
   } catch (error) {
     if (error instanceof OrderError) {

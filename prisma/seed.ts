@@ -9,6 +9,7 @@ const staff = [
   { name: "Quản lý", email: "manager@cafe.local", role: Role.MANAGER },
   { name: "Thu ngân", email: "cashier@cafe.local", role: Role.CASHIER },
   { name: "Pha chế", email: "barista@cafe.local", role: Role.BARISTA },
+  { name: "Khách hàng mẫu", email: "customer@cafe.local", role: Role.CUSTOMER },
 ];
 
 const categories = [
@@ -232,6 +233,12 @@ async function main() {
     const options = [
       { group: OptionGroup.SIZE, name: "M", priceDelta: 0 },
       { group: OptionGroup.SIZE, name: "L", priceDelta: 7000 },
+      { group: OptionGroup.ICE, name: "Ít đá", priceDelta: 0 },
+      { group: OptionGroup.ICE, name: "Bình thường", priceDelta: 0 },
+      { group: OptionGroup.ICE, name: "Nhiều đá", priceDelta: 0 },
+      { group: OptionGroup.SUGAR, name: "Ít đường", priceDelta: 0 },
+      { group: OptionGroup.SUGAR, name: "Bình thường", priceDelta: 0 },
+      { group: OptionGroup.SUGAR, name: "Nhiều đường", priceDelta: 0 },
       ...toppings.map((topping) => ({
         group: OptionGroup.TOPPING,
         ...topping,

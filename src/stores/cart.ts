@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from "zustand/middleware";
 
 export type CartOption = {
   id: string;
-  group: "SIZE" | "TOPPING";
+  group: "SIZE" | "ICE" | "SUGAR" | "TOPPING";
   name: string;
   priceDelta: number;
 };

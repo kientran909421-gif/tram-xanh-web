@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 enum Role {
@@ -28,6 +28,7 @@ enum OrderStatus {
   DELIVERING
   COMPLETED
   CANCELLED
+  REFUNDED
 }
 
 enum PaymentMethod {
@@ -40,12 +41,15 @@ enum PaymentStatus {
   PENDING
   PAID
   FAILED
+  CANCELLED
   REFUNDED
 }
 
 enum OptionGroup {
   SIZE
   TOPPING
+  ICE
+  SUGAR
 }
 
 enum DiscountType {
@@ -53,17 +57,39 @@ enum DiscountType {
   FIXED
 }
 
+enum InventoryMovementType {
+  RECEIPT
+  ADJUSTMENT
+  WASTE
+}
+
+enum InventoryAlertStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
+}
+
 model User {
-  id           String        @id @default(cuid())
-  name         String
-  email        String        @unique
-  phone        String?
-  passwordHash String
-  role         Role          @default(CUSTOMER)
-  isActive     Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
-  orders       Order[]
+  id                      String              @id @default(cuid())
+  name                    String
+  email                   String              @unique
+  phone                   String?
+  passwordHash            String
+  role                    Role                @default(CUSTOMER)
+  isActive                Boolean             @default(true)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
+  orders                  Order[]             @relation("CustomerOrders")
+  createdOrders           Order[]             @relation("OrderCreatedBy")
+  assignedCashierOrders   Order[]             @relation("OrderAssignedCashier")
+  assignedBaristaOrders   Order[]             @relation("OrderAssignedBarista")
+  confirmedPayments       Payment[]           @relation("PaymentConfirmedBy")
+  addresses               UserAddress[]
+  reviews                 ProductReview[]
+  auditEvents             AuditLog[]
+  inventoryMovements      InventoryMovement[]
+  reportedInventoryAlerts InventoryAlert[]    @relation("InventoryAlertReporter")
+  resolvedInventoryAlerts InventoryAlert[]    @relation("InventoryAlertResolver")
 }
 
 model Category {
@@ -86,6 +112,7 @@ model MenuItem {
   category    Category         @relation(fields: [categoryId], references: [id])
   options     MenuItemOption[]
   orderItems  OrderItem[]
+  reviews     ProductReview[]
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
 
@@ -121,53 +148,179 @@ model Promotion {
 }
 
 model Order {
-  id            String      @id @default(cuid())
-  code          String      @unique
-  userId        String?
-  user          User?       @relation(fields: [userId], references: [id])
-  customerName  String
-  customerPhone String
-  type          OrderType
-  address       String?
-  note          String?
-  status        OrderStatus @default(PENDING)
-  subtotal      Int
-  discount      Int         @default(0)
-  deliveryFee   Int         @default(0)
-  total         Int
-  promotionId   String?
-  promotion     Promotion?  @relation(fields: [promotionId], references: [id])
-  items         OrderItem[]
-  payment       Payment?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id                String      @id @default(cuid())
+  code              String      @unique
+  userId            String?
+  user              User?       @relation("CustomerOrders", fields: [userId], references: [id], onDelete: SetNull)
+  createdById       String?
+  createdBy         User?       @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignedCashierId String?
+  assignedCashier   User?       @relation("OrderAssignedCashier", fields: [assignedCashierId], references: [id], onDelete: SetNull)
+  assignedBaristaId String?
+  assignedBarista   User?       @relation("OrderAssignedBarista", fields: [assignedBaristaId], references: [id], onDelete: SetNull)
+  customerName      String
+  customerPhone     String
+  type              OrderType
+  address           String?
+  note              String?
+  status            OrderStatus @default(PENDING)
+  subtotal          Int
+  discount          Int         @default(0)
+  deliveryFee       Int         @default(0)
+  total             Int
+  promotionId       String?
+  promotion         Promotion?  @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  items             OrderItem[]
+  payment           Payment?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
 
   @@index([userId])
   @@index([status, createdAt])
+  @@index([createdById, createdAt])
+  @@index([assignedCashierId, status, createdAt])
+  @@index([assignedBaristaId, status, createdAt])
 }
 
 model OrderItem {
-  id         String   @id @default(cuid())
+  id         String          @id @default(cuid())
   orderId    String
-  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  order      Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
   menuItemId String
-  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItem   MenuItem        @relation(fields: [menuItemId], references: [id])
   name       String
   unitPrice  Int
   quantity   Int
   options    Json?
   note       String?
+  reviews    ProductReview[]
 
   @@index([orderId])
 }
 
 model Payment {
-  id      String        @id @default(cuid())
-  orderId String        @unique
-  order   Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  method  PaymentMethod
-  status  PaymentStatus @default(PENDING)
-  amount  Int
-  paidAt  DateTime?
-  txnRef  String?
+  id             String        @id @default(cuid())
+  orderId        String        @unique
+  order          Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method         PaymentMethod
+  status         PaymentStatus @default(PENDING)
+  amount         Int
+  amountTendered Int?
+  changeDue      Int?
+  paidAt         DateTime?
+  txnRef         String?
+  confirmedById  String?
+  confirmedBy    User?         @relation("PaymentConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
+}
+
+model UserAddress {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String
+  address   String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, isDefault])
+}
+
+model ProductReview {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  menuItemId  String
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Restrict)
+  orderItemId String    @unique
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Restrict)
+  rating      Int
+  comment     String?
+  isVisible   Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([menuItemId, isVisible, createdAt])
+  @@index([userId, createdAt])
+}
+
+model InventoryIngredient {
+  id             String              @id @default(cuid())
+  name           String              @unique
+  unit           String
+  quantityOnHand Decimal             @default(0) @db.Decimal(12, 3)
+  lowStockAt     Decimal             @default(0) @db.Decimal(12, 3)
+  isActive       Boolean             @default(true)
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+  movements      InventoryMovement[]
+  alerts         InventoryAlert[]
+
+  @@index([isActive, name])
+}
+
+model InventoryMovement {
+  id           String                @id @default(cuid())
+  ingredientId String
+  ingredient   InventoryIngredient   @relation(fields: [ingredientId], references: [id], onDelete: Restrict)
+  actorId      String?
+  actor        User?                 @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  type         InventoryMovementType
+  quantity     Decimal               @db.Decimal(12, 3)
+  note         String?
+  createdAt    DateTime              @default(now())
+
+  @@index([ingredientId, createdAt])
+  @@index([actorId, createdAt])
+}
+
+model InventoryAlert {
+  id           String               @id @default(cuid())
+  ingredientId String?
+  ingredient   InventoryIngredient? @relation(fields: [ingredientId], references: [id], onDelete: SetNull)
+  reportedById String
+  reportedBy   User                 @relation("InventoryAlertReporter", fields: [reportedById], references: [id], onDelete: Restrict)
+  resolvedById String?
+  resolvedBy   User?                @relation("InventoryAlertResolver", fields: [resolvedById], references: [id], onDelete: SetNull)
+  message      String
+  status       InventoryAlertStatus @default(OPEN)
+  createdAt    DateTime             @default(now())
+  resolvedAt   DateTime?
+
+  @@index([status, createdAt])
+  @@index([ingredientId, status])
+  @@index([reportedById, createdAt])
+}
+
+model StoreSettings {
+  id                    String   @id @default("store")
+  storeName             String   @default("TRẠM XANH")
+  address               String   @default("Số 2 Lê Quang Đạo, Từ Liêm, Hà Nội")
+  phone                 String   @default("0366 263 190")
+  email                 String   @default("hello@tramxanh.com")
+  openingTime           String   @default("07:00")
+  closingTime           String   @default("22:00")
+  deliveryFee           Int      @default(15000)
+  customerCancelMinutes Int      @default(0)
+  allowCash             Boolean  @default(true)
+  allowBankTransfer     Boolean  @default(true)
+  allowMomo             Boolean  @default(true)
+  updatedAt             DateTime @updatedAt
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  actorEmail String?
+  actorRole  Role?
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([entityType, entityId, createdAt])
+  @@index([action, createdAt])
 }
