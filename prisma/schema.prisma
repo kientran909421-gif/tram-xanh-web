@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  CASHIER
+  BARISTA
+  CUSTOMER
+}
+
+enum OrderType {
+  TAKEAWAY
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  DELIVERING
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  MOMO
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum ReservationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum OptionGroup {
+  SIZE
+  TOPPING
+}
+
+enum DiscountType {
+  PERCENT
+  FIXED
+}
+
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  phone        String?
+  passwordHash String
+  role         Role          @default(CUSTOMER)
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  orders       Order[]
+  reservations Reservation[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique
+  slug      String     @unique
+  sortOrder Int        @default(0)
+  items     MenuItem[]
+}
+
+model MenuItem {
+  id          String           @id @default(cuid())
+  name        String
+  slug        String           @unique
+  description String?
+  price       Int
+  imageUrl    String?
+  isAvailable Boolean          @default(true)
+  categoryId  String
+  category    Category         @relation(fields: [categoryId], references: [id])
+  options     MenuItemOption[]
+  orderItems  OrderItem[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([categoryId])
+}
+
+model MenuItemOption {
+  id          String      @id @default(cuid())
+  menuItemId  String
+  menuItem    MenuItem    @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  group       OptionGroup
+  name        String
+  priceDelta  Int         @default(0)
+  isAvailable Boolean     @default(true)
+
+  @@index([menuItemId])
+}
+
+model Promotion {
+  id          String       @id @default(cuid())
+  code        String       @unique
+  description String?
+  type        DiscountType
+  value       Int
+  minOrder    Int          @default(0)
+  maxDiscount Int?
+  startsAt    DateTime
+  expiresAt   DateTime
+  usageLimit  Int?
+  usedCount   Int          @default(0)
+  isActive    Boolean      @default(true)
+  orders      Order[]
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  code          String      @unique
+  userId        String?
+  user          User?       @relation(fields: [userId], references: [id])
+  customerName  String
+  customerPhone String
+  type          OrderType
+  address       String?
+  note          String?
+  status        OrderStatus @default(PENDING)
+  subtotal      Int
+  discount      Int         @default(0)
+  deliveryFee   Int         @default(0)
+  total         Int
+  promotionId   String?
+  promotion     Promotion?  @relation(fields: [promotionId], references: [id])
+  items         OrderItem[]
+  payment       Payment?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItemId String
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  name       String
+  unitPrice  Int
+  quantity   Int
+  options    Json?
+  note       String?
+
+  @@index([orderId])
+}
+
+model Payment {
+  id      String        @id @default(cuid())
+  orderId String        @unique
+  order   Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  method  PaymentMethod
+  status  PaymentStatus @default(PENDING)
+  amount  Int
+  paidAt  DateTime?
+  txnRef  String?
+}
+
+model Reservation {
+  id        String            @id @default(cuid())
+  code      String            @unique
+  userId    String?
+  user      User?             @relation(fields: [userId], references: [id])
+  name      String
+  phone     String
+  date      DateTime
+  timeSlot  String
+  guests    Int
+  note      String?
+  status    ReservationStatus @default(PENDING)
+  createdAt DateTime          @default(now())
+
+  @@index([date, timeSlot])
+}
