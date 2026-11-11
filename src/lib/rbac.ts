@@ -11,9 +11,15 @@ export function requireRole(
   roles: readonly AuthRole[],
   context: "api",
 ): Promise<SessionUser | NextResponse>;
+export function requireRole(
+  roles: readonly AuthRole[],
+  context?: "page",
+  forbiddenRedirect?: string,
+): Promise<SessionUser>;
 export async function requireRole(
   roles: readonly AuthRole[],
   context: "page" | "api" = "page",
+  forbiddenRedirect = "/",
 ): Promise<SessionUser | NextResponse> {
   const session = await auth();
 
@@ -30,7 +36,7 @@ export async function requireRole(
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
 
-    redirect("/");
+    redirect(forbiddenRedirect);
   }
 
   return session.user;

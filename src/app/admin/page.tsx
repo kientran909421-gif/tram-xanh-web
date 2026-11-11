@@ -1,11 +1,9 @@
 import { Suspense } from "react";
 import { requireRole } from "@/lib/rbac";
-import type { AuthRole } from "@/lib/auth.config";
-
-const staffRoles: AuthRole[] = ["ADMIN", "MANAGER", "CASHIER", "BARISTA"];
+import { adminPermissions } from "@/lib/permissions";
 
 async function AdminDashboard() {
-  await requireRole(staffRoles);
+  await requireRole(adminPermissions.dashboard, "page", "/admin/forbidden");
 
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12">
