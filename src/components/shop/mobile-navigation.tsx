@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 const navigation = [
   { label: "Trang chủ", href: "/" },
   { label: "Menu", href: "/menu" },
-  { label: "Đặt bàn", href: "/reservation" },
   { label: "Theo dõi đơn", href: "/account/orders" },
 ];
 

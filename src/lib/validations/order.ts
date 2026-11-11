@@ -26,7 +26,7 @@ const orderDetailsShape = {
   address: z.string().trim().max(500).optional(),
   note: z.string().max(1000).optional(),
   paymentMethod: z.enum(["CASH", "BANK_TRANSFER", "MOMO"]),
-  promoCode: z.string().trim().min(1).max(50).optional(),
+  promoCode: z.string().trim().max(50).optional(),
 };
 
 function validateDeliveryAddress(

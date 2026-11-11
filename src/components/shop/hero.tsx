@@ -17,8 +17,8 @@ export function Hero() {
             Một ly đủ đầy năng lượng
           </p>
           <p className="mt-5 max-w-md text-base leading-relaxed text-primary-foreground/80">
-            Cà phê, trà và những góc xanh giữa phố. Đặt món online hoặc giữ
-            bàn trước để {SITE_INFO.name} chờ bạn.
+            Cà phê, trà và những góc xanh giữa phố. Đặt món online tại{" "}
+            {SITE_INFO.name}.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
@@ -26,12 +26,6 @@ export function Hero() {
               className="inline-flex h-11 items-center rounded-full bg-ring px-6 text-sm font-semibold text-foreground transition-colors hover:bg-ring/90"
             >
               Xem menu
-            </Link>
-            <Link
-              href="/reservation"
-              className="inline-flex h-11 items-center rounded-full border border-primary-foreground/40 px-6 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-foreground/10"
-            >
-              Đặt bàn
             </Link>
           </div>
         </div>

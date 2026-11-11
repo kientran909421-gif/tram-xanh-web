@@ -3,7 +3,6 @@ import type { AuthRole } from "@/lib/auth.config";
 export const adminPermissions = {
   dashboard: ["ADMIN", "MANAGER", "CASHIER", "BARISTA"],
   orders: ["ADMIN", "MANAGER", "CASHIER", "BARISTA"],
-  reservations: ["ADMIN", "MANAGER", "CASHIER"],
   menu: ["ADMIN", "MANAGER"],
   categories: ["ADMIN", "MANAGER"],
   promotions: ["ADMIN", "MANAGER"],
@@ -19,7 +18,6 @@ export const adminNavigation: {
 }[] = [
   { section: "dashboard", label: "Dashboard", href: "/admin" },
   { section: "orders", label: "Đơn hàng", href: "/admin/orders" },
-  { section: "reservations", label: "Đặt bàn", href: "/admin/reservations" },
   { section: "menu", label: "Menu", href: "/admin/menu" },
   { section: "categories", label: "Danh mục", href: "/admin/categories" },
   { section: "promotions", label: "Khuyến mãi", href: "/admin/promotions" },

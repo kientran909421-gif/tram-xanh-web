@@ -17,7 +17,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Trạm Xanh | Cà phê & Trà",
-  description: "Trạm Xanh: không gian cà phê xanh, thoáng, đặt món và đặt bàn online",
+  description: "Trạm Xanh: không gian cà phê xanh, thoáng, đặt món online",
 };
 
 

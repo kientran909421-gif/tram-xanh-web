@@ -161,10 +161,10 @@ export function CheckoutForm({
         return;
       }
 
-      clearCart();
+      
       router.push(
-        `/track/${encodeURIComponent(result.code)}?phone=${encodeURIComponent(values.customerPhone)}`,
-      );
+  `/thank-you?code=${encodeURIComponent(result.code)}&phone=${encodeURIComponent(values.customerPhone)}`,
+);
     } catch {
       setSubmitError("Không thể kết nối máy chủ. Vui lòng thử lại.");
     }

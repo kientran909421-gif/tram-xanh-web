@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
@@ -9,11 +10,11 @@ import { CartButton } from "@/components/shop/cart-button";
 const navigation = [
   { label: "Trang chủ", href: "/" },
   { label: "Menu", href: "/menu" },
-  { label: "Đặt bàn", href: "/reservation" },
   { label: "Theo dõi đơn", href: "/track" },
 ];
 
-export async function Header() {
+export async function Header() { 
+  await connection();
   const session = await auth();
 
   return (
