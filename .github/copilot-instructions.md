@@ -6,6 +6,6 @@
 - Phân quyền bằng requireRole() trong src/lib/rbac.ts ở mọi route /api/admin và trang /admin.
 - Tiền tệ là số nguyên VND; format bằng hàm formatVND.
 - Mọi trang có loading.tsx, error.tsx, và empty state.
-- UI tiếng Việt, tối giản, tông màu nâu kem, mobile-first.
+- UI tiếng Việt, tối giản, tông xanh lá thiên nhiên, mobile-first.
 - Không bao giờ đọc, in ra hoặc commit file .env.
 - Sau mỗi thay đổi lớn, chạy `npm run build` và `npm run lint` rồi sửa lỗi.

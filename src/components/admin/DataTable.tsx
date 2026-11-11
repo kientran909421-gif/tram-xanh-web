@@ -20,6 +20,9 @@ export function DataTable<Row>({
   loading = false,
   emptyMessage = "Chưa có dữ liệu",
   pageSize = 10,
+  searchValue,
+  onSearchChange,
+  pagination,
 }: {
   rows: Row[];
   columns: DataTableColumn<Row>[];
@@ -29,45 +32,57 @@ export function DataTable<Row>({
   loading?: boolean;
   emptyMessage?: string;
   pageSize?: number;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
+  pagination?: {
+    page: number;
+    totalPages: number;
+    onPageChange: (page: number) => void;
+  };
 }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
+  const activeQuery = searchValue ?? query;
   const filteredRows = useMemo(() => {
-    const normalizedQuery = query.trim().toLocaleLowerCase("vi");
+    const normalizedQuery = activeQuery.trim().toLocaleLowerCase("vi");
     if (!normalizedQuery) {
       return rows;
     }
     return rows.filter((row) =>
       searchableText(row).toLocaleLowerCase("vi").includes(normalizedQuery),
     );
-  }, [query, rows, searchableText]);
-  const pageCount = Math.max(1, Math.ceil(filteredRows.length / pageSize));
-  const currentPage = Math.min(page, pageCount);
-  const pageRows = filteredRows.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize,
-  );
+  }, [activeQuery, rows, searchableText]);
+  const pageCount = pagination?.totalPages ??
+    Math.max(1, Math.ceil(filteredRows.length / pageSize));
+  const currentPage = pagination?.page ?? Math.min(page, pageCount);
+  const pageRows = pagination
+    ? rows
+    : filteredRows.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
         <Input
           aria-label="Tìm trong bảng"
-          className="max-w-sm bg-white"
+          className="max-w-sm bg-card"
           onChange={(event) => {
-            setQuery(event.target.value);
-            setPage(1);
+            if (onSearchChange) {
+              onSearchChange(event.target.value);
+            } else {
+              setQuery(event.target.value);
+              setPage(1);
+            }
           }}
           placeholder={searchPlaceholder}
-          value={query}
+          value={activeQuery}
         />
-        <p aria-live="polite" className="text-sm text-stone-500">
+        <p aria-live="polite" className="text-sm text-muted-foreground">
           {loading ? "Đang tải dữ liệu..." : `${filteredRows.length} kết quả`}
         </p>
       </div>
-      <div className="overflow-x-auto rounded-xl border border-[#e9e0d2] bg-white">
+      <div className="overflow-x-auto rounded-xl border border-border bg-card">
         <table className="w-full min-w-[38rem] text-left text-sm">
-          <thead className="bg-[#f7f2e9] text-xs uppercase tracking-wide text-stone-600">
+          <thead className="bg-muted text-xs uppercase tracking-wide text-muted-foreground">
             <tr>
               {columns.map((column) => (
                 <th
@@ -80,13 +95,13 @@ export function DataTable<Row>({
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#f0e9de]">
+          <tbody className="divide-y divide-border">
             {loading ? (
               Array.from({ length: 5 }, (_, rowIndex) => (
                 <tr key={`skeleton-${rowIndex}`}>
                   {columns.map((column) => (
                     <td className="px-4 py-4" key={column.key}>
-                      <div className="h-4 animate-pulse rounded bg-[#eee6da]" />
+                      <div className="h-4 animate-pulse rounded bg-muted" />
                     </td>
                   ))}
                 </tr>
@@ -94,7 +109,7 @@ export function DataTable<Row>({
             ) : pageRows.length === 0 ? (
               <tr>
                 <td
-                  className="px-4 py-12 text-center text-stone-500"
+                  className="px-4 py-12 text-center text-muted-foreground"
                   colSpan={columns.length}
                 >
                   {emptyMessage}
@@ -102,7 +117,7 @@ export function DataTable<Row>({
               </tr>
             ) : (
               pageRows.map((row) => (
-                <tr className="text-stone-700" key={rowKey(row)}>
+                <tr className="text-foreground" key={rowKey(row)}>
                   {columns.map((column) => (
                     <td className="px-4 py-3.5" key={column.key}>
                       {column.render(row)}
@@ -115,13 +130,17 @@ export function DataTable<Row>({
         </table>
       </div>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-stone-500">
+        <p className="text-sm text-muted-foreground">
           Trang {currentPage} / {pageCount}
         </p>
         <div className="flex gap-2">
           <Button
             disabled={currentPage <= 1 || loading}
-            onClick={() => setPage(currentPage - 1)}
+            onClick={() =>
+              pagination
+                ? pagination.onPageChange(currentPage - 1)
+                : setPage(currentPage - 1)
+            }
             type="button"
             variant="outline"
           >
@@ -129,7 +148,11 @@ export function DataTable<Row>({
           </Button>
           <Button
             disabled={currentPage >= pageCount || loading}
-            onClick={() => setPage(currentPage + 1)}
+            onClick={() =>
+              pagination
+                ? pagination.onPageChange(currentPage + 1)
+                : setPage(currentPage + 1)
+            }
             type="button"
             variant="outline"
           >

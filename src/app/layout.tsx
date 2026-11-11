@@ -16,9 +16,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cafe",
-  description: "Cà phê thơm ngon, những khoảnh khắc thật trọn vẹn.",
+  title: "Trạm Xanh | Cà phê & Trà",
+  description: "Trạm Xanh: không gian cà phê xanh, thoáng, đặt món và đặt bàn online",
 };
+
+
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
