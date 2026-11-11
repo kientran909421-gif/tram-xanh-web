@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { vietnamPhoneSchema } from "@/lib/validations/common";
 
 const orderItemSchema = z
   .object({
@@ -21,10 +22,7 @@ const orderItemSchema = z
 const orderDetailsShape = {
   type: z.enum(["TAKEAWAY", "DELIVERY"]),
   customerName: z.string().trim().min(1).max(120),
-  customerPhone: z
-    .string()
-    .trim()
-    .regex(/^0\d{9}$/, "Số điện thoại phải có 10 chữ số và bắt đầu bằng 0"),
+  customerPhone: vietnamPhoneSchema,
   address: z.string().trim().max(500).optional(),
   note: z.string().max(1000).optional(),
   paymentMethod: z.enum(["CASH", "BANK_TRANSFER", "MOMO"]),
@@ -59,10 +57,7 @@ export const orderDetailsSchema = z
 
 export const trackOrderQuerySchema = z.object({
   code: z.string().trim().min(1).max(32),
-  phone: z
-    .string()
-    .trim()
-    .regex(/^0\d{9}$/, "Số điện thoại không hợp lệ"),
+  phone: vietnamPhoneSchema,
 });
 
 export const myOrdersQuerySchema = z.object({
