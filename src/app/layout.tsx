@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import { Geist, Geist_Mono, Figtree } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
-import { Header } from "@/components/header";
 
 const figtree = Figtree({subsets:['latin'],variable:'--font-sans'});
 
@@ -28,16 +26,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="vi"
       className={cn("h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", figtree.variable)}
     >
-      <body className="min-h-full flex flex-col">
-        <Suspense
-          fallback={
-            <header className="h-[65px] border-b bg-card" aria-hidden="true" />
-          }
-        >
-          <Header />
-        </Suspense>
-        {children}
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }
