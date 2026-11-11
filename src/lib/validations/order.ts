@@ -18,30 +18,44 @@ const orderItemSchema = z
     }
   });
 
+const orderDetailsShape = {
+  type: z.enum(["TAKEAWAY", "DELIVERY"]),
+  customerName: z.string().trim().min(1).max(120),
+  customerPhone: z
+    .string()
+    .trim()
+    .regex(/^0\d{9}$/, "Số điện thoại phải có 10 chữ số và bắt đầu bằng 0"),
+  address: z.string().trim().max(500).optional(),
+  note: z.string().max(1000).optional(),
+  paymentMethod: z.enum(["CASH", "BANK_TRANSFER", "MOMO"]),
+  promoCode: z.string().trim().min(1).max(50).optional(),
+};
+
+function validateDeliveryAddress(
+  order: { type: "TAKEAWAY" | "DELIVERY"; address?: string },
+  context: z.RefinementCtx,
+) {
+  if (order.type === "DELIVERY" && !order.address?.trim()) {
+    context.addIssue({
+      code: "custom",
+      message: "Vui lòng nhập địa chỉ giao hàng",
+      path: ["address"],
+    });
+  }
+}
+
 export const createOrderSchema = z
   .object({
+    ...orderDetailsShape,
     items: z.array(orderItemSchema).min(1).max(50),
-    type: z.enum(["TAKEAWAY", "DELIVERY"]),
-    customerName: z.string().trim().min(1).max(120),
-    customerPhone: z
-      .string()
-      .trim()
-      .regex(/^0\d{9}$/, "Số điện thoại phải có 10 chữ số và bắt đầu bằng 0"),
-    address: z.string().trim().max(500).optional(),
-    note: z.string().max(1000).optional(),
-    paymentMethod: z.enum(["CASH", "BANK_TRANSFER", "MOMO"]),
-    promoCode: z.string().trim().min(1).max(50).optional(),
   })
   .strict()
-  .superRefine((order, context) => {
-    if (order.type === "DELIVERY" && !order.address?.trim()) {
-      context.addIssue({
-        code: "custom",
-        message: "Vui lòng nhập địa chỉ giao hàng",
-        path: ["address"],
-      });
-    }
-  });
+  .superRefine(validateDeliveryAddress);
+
+export const orderDetailsSchema = z
+  .object(orderDetailsShape)
+  .strict()
+  .superRefine(validateDeliveryAddress);
 
 export const trackOrderQuerySchema = z.object({
   code: z.string().trim().min(1).max(32),

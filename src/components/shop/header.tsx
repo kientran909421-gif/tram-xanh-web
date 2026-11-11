@@ -9,7 +9,7 @@ const navigation = [
   { label: "Trang chủ", href: "/" },
   { label: "Menu", href: "/menu" },
   { label: "Đặt bàn", href: "/reservation" },
-  { label: "Theo dõi đơn", href: "/account/orders" },
+  { label: "Theo dõi đơn", href: "/track" },
 ];
 
 export async function Header() {
