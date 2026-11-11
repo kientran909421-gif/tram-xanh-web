@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { ShoppingCart01Icon } from "@hugeicons/core-free-icons";
 import { auth } from "@/lib/auth";
 import { SITE_INFO } from "@/lib/site";
 import { UserMenu } from "@/components/user-menu";
 import { MobileNavigation } from "@/components/shop/mobile-navigation";
+import { CartButton } from "@/components/shop/cart-button";
 
 const navigation = [
   { label: "Trang chủ", href: "/" },
@@ -41,16 +40,7 @@ export async function Header() {
           ))}
         </ul>
         <div className="flex items-center gap-2 sm:gap-4">
-          <Link
-            className="relative inline-flex size-10 items-center justify-center rounded-full text-[#513625] transition-colors hover:bg-amber-100"
-            href="/cart"
-            aria-label="Giỏ hàng, 0 sản phẩm"
-          >
-            <HugeiconsIcon icon={ShoppingCart01Icon} size={22} aria-hidden="true" />
-            <span className="absolute -right-0.5 -top-0.5 inline-flex size-5 items-center justify-center rounded-full bg-[#754c32] text-[11px] font-semibold text-white">
-              0
-            </span>
-          </Link>
+          <CartButton />
           <div className="hidden sm:block">
             <UserMenu user={session?.user ?? null} />
           </div>

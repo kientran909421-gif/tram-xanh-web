@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { MenuCard } from "@/components/shop/menu-card";
 import {
   MenuItemDialog,
@@ -9,6 +10,7 @@ import {
 } from "@/components/shop/menu-item-dialog";
 import type { MenuItemWithOptions } from "@/lib/menu";
 import { Input } from "@/components/ui/input";
+import { useCartStore } from "@/stores/cart";
 
 type Category = {
   id: string;
@@ -39,7 +41,7 @@ export function MenuBrowser() {
   const [selectedItem, setSelectedItem] = useState<MenuItemWithOptions | null>(
     null,
   );
-  const [notice, setNotice] = useState("");
+  const addItem = useCartStore((state) => state.addItem);
 
   const selectedCategory = useMemo(
     () => categories.find((category) => category.slug === categorySlug),
@@ -146,9 +148,26 @@ export function MenuBrowser() {
   }, [queryInput, searchQuery, updateQuery]);
 
   function handleAdd(item: MenuItemWithOptions, selection: MenuSelection) {
-    setNotice(
-      `${item.name} (${selection.quantity}) đã được chọn. Tính năng giỏ hàng sẽ sớm được bổ sung.`,
-    );
+    const options = (selection.size
+      ? [selection.size, ...selection.toppings]
+      : selection.toppings
+    ).map((option) => ({
+        id: option.id,
+        group: option.group,
+        name: option.name,
+        priceDelta: option.priceDelta,
+      }));
+
+    addItem({
+      menuItemId: item.id,
+      name: item.name,
+      imageUrl: item.imageUrl,
+      unitPrice: selection.unitPrice,
+      quantity: selection.quantity,
+      options,
+      note: selection.note,
+    });
+    toast.success("Đã thêm vào giỏ");
   }
 
   return (
@@ -252,15 +271,6 @@ export function MenuBrowser() {
               Chỉ món còn hàng
             </label>
           </div>
-
-          {notice ? (
-            <p
-              className="rounded-lg border border-[#d6c5b2] bg-[#fbf8f2] px-4 py-3 text-sm text-[#513625]"
-              role="status"
-            >
-              {notice}
-            </p>
-          ) : null}
 
           {menuError ? (
             <div
