@@ -1,0 +1,11 @@
+# Quy ước dự án
+- Next.js App Router, TypeScript strict, Tailwind, shadcn/ui, Prisma 6 + PostgreSQL (Supabase).
+- Server Components mặc định; chỉ dùng "use client" khi cần.
+- Mọi input API validate bằng Zod (src/lib/validations). Trả lỗi dạng { error: string, details? }.
+- Không tin giá/tổng tiền từ client; tính lại ở server.
+- Phân quyền bằng requireRole() trong src/lib/rbac.ts ở mọi route /api/admin và trang /admin.
+- Tiền tệ là số nguyên VND; format bằng hàm formatVND.
+- Mọi trang có loading.tsx, error.tsx, và empty state.
+- UI tiếng Việt, tối giản, tông màu nâu kem, mobile-first.
+- Không bao giờ đọc, in ra hoặc commit file .env.
+- Sau mỗi thay đổi lớn, chạy `npm run build` và `npm run lint` rồi sửa lỗi.
