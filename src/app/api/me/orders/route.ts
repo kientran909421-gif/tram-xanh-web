@@ -37,12 +37,14 @@ export async function GET(request: Request) {
         select: {
           code: true,
           status: true,
+          paymentStatus: true,
           type: true,
           subtotal: true,
           discount: true,
           deliveryFee: true,
           total: true,
           createdAt: true,
+          statusUpdatedAt: true,
           items: {
             select: {
               id: true,
@@ -57,6 +59,11 @@ export async function GET(request: Request) {
               method: true,
               status: true,
             },
+          },
+          cancellationRequests: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { status: true },
           },
         },
       }),

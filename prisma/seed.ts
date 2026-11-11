@@ -1,5 +1,12 @@
 import { hash } from "bcryptjs";
-import { DiscountType, OptionGroup, PrismaClient, Role } from "@prisma/client";
+import {
+  DiscountType,
+  OptionGroup,
+  OrderStatus,
+  PaymentStatus,
+  PrismaClient,
+  Role,
+} from "@prisma/client";
 
 const prisma = new PrismaClient();
 const defaultPassword = "Admin@123";
@@ -309,6 +316,150 @@ async function main() {
       where: { code: promotion.code },
       update: { ...promotion, startsAt, expiresAt, isActive: true },
       create: { ...promotion, startsAt, expiresAt },
+    });
+  }
+
+  const [customer, cashier, barista, sampleItem] = await Promise.all([
+    prisma.user.findUniqueOrThrow({ where: { email: "customer@cafe.local" } }),
+    prisma.user.findUniqueOrThrow({ where: { email: "cashier@cafe.local" } }),
+    prisma.user.findUniqueOrThrow({ where: { email: "barista@cafe.local" } }),
+    prisma.menuItem.findUniqueOrThrow({ where: { slug: "ca-phe-sua-da" } }),
+  ]);
+  const deliveryFee = 15000;
+  const orderSamples: {
+    code: string;
+    type: "TAKEAWAY" | "DELIVERY";
+    status: OrderStatus;
+    paymentStatus: PaymentStatus;
+    timeline: OrderStatus[];
+  }[] = [
+    {
+      code: "DEMO-PENDING",
+      type: "TAKEAWAY",
+      status: "PENDING",
+      paymentStatus: "UNPAID",
+      timeline: ["PENDING"],
+    },
+    {
+      code: "DEMO-PREPARING",
+      type: "TAKEAWAY",
+      status: "PREPARING",
+      paymentStatus: "PAID",
+      timeline: ["PENDING", "CONFIRMED", "PREPARING"],
+    },
+    {
+      code: "DEMO-READY",
+      type: "DELIVERY",
+      status: "READY",
+      paymentStatus: "UNPAID",
+      timeline: ["PENDING", "CONFIRMED", "PREPARING", "READY"],
+    },
+    {
+      code: "DEMO-OUT-FOR-DELIVERY",
+      type: "DELIVERY",
+      status: "OUT_FOR_DELIVERY",
+      paymentStatus: "PAID",
+      timeline: [
+        "PENDING",
+        "CONFIRMED",
+        "PREPARING",
+        "READY",
+        "OUT_FOR_DELIVERY",
+      ],
+    },
+    {
+      code: "DEMO-COMPLETED",
+      type: "TAKEAWAY",
+      status: "COMPLETED",
+      paymentStatus: "PAID",
+      timeline: [
+        "PENDING",
+        "CONFIRMED",
+        "PREPARING",
+        "READY",
+        "SERVED",
+        "COMPLETED",
+      ],
+    },
+  ];
+
+  for (const sample of orderSamples) {
+    const total = sampleItem.price + (sample.type === "DELIVERY" ? deliveryFee : 0);
+    const timestamps = sample.timeline.map(
+      (_, index) =>
+        new Date(now.getTime() - (sample.timeline.length - index) * 5 * 60_000),
+    );
+    const statusUpdatedAt = timestamps[timestamps.length - 1] ?? now;
+    await prisma.order.upsert({
+      where: { code: sample.code },
+      update: {},
+      create: {
+        code: sample.code,
+        userId: customer.id,
+        createdById: customer.id,
+        assignedCashierId: cashier.id,
+        assignedBaristaId: barista.id,
+        customerName: customer.name,
+        customerPhone: customer.phone ?? "0900000000",
+        type: sample.type,
+        ...(sample.type === "DELIVERY"
+          ? { address: "Số 2 Lê Quang Đạo, Từ Liêm, Hà Nội" }
+          : {}),
+        status: sample.status,
+        paymentStatus: sample.paymentStatus,
+        statusUpdatedAt,
+        subtotal: sampleItem.price,
+        deliveryFee: sample.type === "DELIVERY" ? deliveryFee : 0,
+        total,
+        items: {
+          create: {
+            menuItemId: sampleItem.id,
+            name: sampleItem.name,
+            unitPrice: sampleItem.price,
+            quantity: 1,
+          },
+        },
+        payment: {
+          create: {
+            method: "CASH",
+            status: sample.paymentStatus,
+            amount: total,
+            ...(sample.paymentStatus === "PAID"
+              ? {
+                  amountTendered: total + 10000,
+                  changeDue: 10000,
+                  paidAt: statusUpdatedAt,
+                  confirmedById: cashier.id,
+                }
+              : {}),
+          },
+        },
+        statusHistory: {
+          create: sample.timeline.map((status, index) => {
+            const changedByRole =
+              status === "PENDING"
+                ? Role.CUSTOMER
+                : status === "PREPARING" || status === "READY"
+                  ? Role.BARISTA
+                  : Role.CASHIER;
+            const changedById =
+              changedByRole === Role.CUSTOMER
+                ? customer.id
+                : changedByRole === Role.BARISTA
+                  ? barista.id
+                  : cashier.id;
+            return {
+              fromStatus:
+                index === 0 ? null : sample.timeline[index - 1] ?? null,
+              toStatus: status,
+              changedById,
+              changedByRole,
+              note: "Dữ liệu đơn hàng mẫu",
+              createdAt: timestamps[index],
+            };
+          }),
+        },
+      },
     });
   }
 }

@@ -3,6 +3,7 @@ import {
   canManageRole,
   canTransitionOrder,
   getVisibleAdminNavigation,
+  rolePermissions,
 } from "./permissions";
 
 describe("role permissions", () => {
@@ -12,6 +13,12 @@ describe("role permissions", () => {
     expect(canManageRole("MANAGER", "ADMIN")).toBe(false);
     expect(canManageRole("MANAGER", "CUSTOMER")).toBe(false);
     expect(canManageRole("CUSTOMER", "CASHIER")).toBe(false);
+  });
+
+  it("limits counter order creation to cashier and admin staff", () => {
+    expect(rolePermissions.counterOrders).toEqual(["ADMIN", "CASHIER"]);
+    expect(rolePermissions.counterOrders).not.toContain("MANAGER");
+    expect(rolePermissions.counterOrders).not.toContain("BARISTA");
   });
 
   it("shows staff navigation only for sections their role can access", () => {
@@ -37,12 +44,62 @@ describe("role permissions", () => {
   });
 
   it("enforces role-specific order transitions", () => {
-    expect(canTransitionOrder("CASHIER", "PENDING", "CONFIRMED")).toBe(true);
-    expect(canTransitionOrder("CASHIER", "PENDING", "CANCELLED")).toBe(true);
-    expect(canTransitionOrder("CASHIER", "CONFIRMED", "CANCELLED")).toBe(false);
-    expect(canTransitionOrder("BARISTA", "PENDING", "CONFIRMED")).toBe(false);
-    expect(canTransitionOrder("BARISTA", "CONFIRMED", "PREPARING")).toBe(true);
-    expect(canTransitionOrder("CASHIER", "COMPLETED", "REFUNDED")).toBe(false);
-    expect(canTransitionOrder("MANAGER", "COMPLETED", "REFUNDED")).toBe(true);
+    expect(
+      canTransitionOrder("CASHIER", "PENDING", "CONFIRMED", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CUSTOMER", "PENDING", "CANCELLED", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CUSTOMER", "PENDING", "CONFIRMED", "TAKEAWAY"),
+    ).toBe(false);
+    expect(
+      canTransitionOrder("CASHIER", "PENDING", "CANCELLED", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CASHIER", "CONFIRMED", "CANCELLED", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("BARISTA", "PREPARING", "CANCELLED", "TAKEAWAY"),
+    ).toBe(false);
+    expect(
+      canTransitionOrder("BARISTA", "PENDING", "CONFIRMED", "TAKEAWAY"),
+    ).toBe(false);
+    expect(
+      canTransitionOrder("BARISTA", "CONFIRMED", "PREPARING", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("BARISTA", "PREPARING", "READY", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CASHIER", "READY", "SERVED", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CASHIER", "READY", "SERVED", "DELIVERY"),
+    ).toBe(false);
+    expect(
+      canTransitionOrder("CASHIER", "READY", "OUT_FOR_DELIVERY", "DELIVERY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CASHIER", "OUT_FOR_DELIVERY", "DELIVERED", "DELIVERY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CASHIER", "SERVED", "COMPLETED", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CASHIER", "SERVED", "COMPLETED", "DELIVERY"),
+    ).toBe(false);
+    expect(
+      canTransitionOrder("MANAGER", "PREPARING", "CANCELLED", "TAKEAWAY"),
+    ).toBe(true);
+    expect(
+      canTransitionOrder("CASHIER", "PENDING", "COMPLETED", "TAKEAWAY"),
+    ).toBe(false);
+    expect(
+      canTransitionOrder("CASHIER", "COMPLETED", "REFUNDED", "TAKEAWAY"),
+    ).toBe(false);
+    expect(
+      canTransitionOrder("MANAGER", "COMPLETED", "REFUNDED", "TAKEAWAY"),
+    ).toBe(true);
   });
 });

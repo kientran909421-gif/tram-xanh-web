@@ -71,7 +71,16 @@ export async function StaffDashboard({
       prisma.order.count({
         where: {
           ...scope,
-          status: { in: ["PENDING", "CONFIRMED", "READY"] },
+          status: {
+            in: [
+              "PENDING",
+              "CONFIRMED",
+              "READY",
+              "SERVED",
+              "OUT_FOR_DELIVERY",
+              "DELIVERED",
+            ],
+          },
         },
       }),
       prisma.order.count({ where: { ...scope, ...todayFilter } }),
@@ -84,7 +93,7 @@ export async function StaffDashboard({
     const scope = { assignedBaristaId: actor.id };
     const [waiting, preparing, ready] = await Promise.all([
       prisma.order.count({
-        where: { ...scope, status: { in: ["CONFIRMED", "PENDING"] } },
+        where: { ...scope, status: "CONFIRMED" },
       }),
       prisma.order.count({ where: { ...scope, status: "PREPARING" } }),
       prisma.order.count({ where: { ...scope, status: "READY" } }),

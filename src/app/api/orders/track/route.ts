@@ -31,6 +31,7 @@ export async function GET(request: Request) {
       select: {
         code: true,
         status: true,
+        paymentStatus: true,
         type: true,
         items: {
           select: {
@@ -50,6 +51,7 @@ export async function GET(request: Request) {
           },
         },
         createdAt: true,
+        statusUpdatedAt: true,
       },
     });
 

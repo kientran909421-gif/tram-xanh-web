@@ -25,7 +25,9 @@ enum OrderStatus {
   CONFIRMED
   PREPARING
   READY
-  DELIVERING
+  SERVED
+  OUT_FOR_DELIVERY
+  DELIVERED
   COMPLETED
   CANCELLED
   REFUNDED
@@ -38,11 +40,17 @@ enum PaymentMethod {
 }
 
 enum PaymentStatus {
-  PENDING
+  UNPAID
   PAID
   FAILED
-  CANCELLED
   REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum CancellationRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
 enum OptionGroup {
@@ -148,32 +156,36 @@ model Promotion {
 }
 
 model Order {
-  id                String      @id @default(cuid())
-  code              String      @unique
-  userId            String?
-  user              User?       @relation("CustomerOrders", fields: [userId], references: [id], onDelete: SetNull)
-  createdById       String?
-  createdBy         User?       @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
-  assignedCashierId String?
-  assignedCashier   User?       @relation("OrderAssignedCashier", fields: [assignedCashierId], references: [id], onDelete: SetNull)
-  assignedBaristaId String?
-  assignedBarista   User?       @relation("OrderAssignedBarista", fields: [assignedBaristaId], references: [id], onDelete: SetNull)
-  customerName      String
-  customerPhone     String
-  type              OrderType
-  address           String?
-  note              String?
-  status            OrderStatus @default(PENDING)
-  subtotal          Int
-  discount          Int         @default(0)
-  deliveryFee       Int         @default(0)
-  total             Int
-  promotionId       String?
-  promotion         Promotion?  @relation(fields: [promotionId], references: [id], onDelete: SetNull)
-  items             OrderItem[]
-  payment           Payment?
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  id                   String                     @id @default(cuid())
+  code                 String                     @unique
+  userId               String?
+  user                 User?                      @relation("CustomerOrders", fields: [userId], references: [id], onDelete: SetNull)
+  createdById          String?
+  createdBy            User?                      @relation("OrderCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  assignedCashierId    String?
+  assignedCashier      User?                      @relation("OrderAssignedCashier", fields: [assignedCashierId], references: [id], onDelete: SetNull)
+  assignedBaristaId    String?
+  assignedBarista      User?                      @relation("OrderAssignedBarista", fields: [assignedBaristaId], references: [id], onDelete: SetNull)
+  customerName         String
+  customerPhone        String
+  type                 OrderType
+  address              String?
+  note                 String?
+  status               OrderStatus                @default(PENDING)
+  paymentStatus        PaymentStatus              @default(UNPAID)
+  statusUpdatedAt      DateTime                   @default(now())
+  subtotal             Int
+  discount             Int                        @default(0)
+  deliveryFee          Int                        @default(0)
+  total                Int
+  promotionId          String?
+  promotion            Promotion?                 @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  items                OrderItem[]
+  payment              Payment?
+  statusHistory        OrderStatusHistory[]
+  cancellationRequests OrderCancellationRequest[]
+  createdAt            DateTime                   @default(now())
+  updatedAt            DateTime                   @updatedAt
 
   @@index([userId])
   @@index([status, createdAt])
@@ -203,14 +215,45 @@ model Payment {
   orderId        String        @unique
   order          Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
   method         PaymentMethod
-  status         PaymentStatus @default(PENDING)
+  status         PaymentStatus @default(UNPAID)
   amount         Int
+  refundedAmount Int           @default(0)
   amountTendered Int?
   changeDue      Int?
   paidAt         DateTime?
   txnRef         String?
   confirmedById  String?
   confirmedBy    User?         @relation("PaymentConfirmedBy", fields: [confirmedById], references: [id], onDelete: SetNull)
+}
+
+model OrderStatusHistory {
+  id            String       @id @default(cuid())
+  orderId       String
+  fromStatus    OrderStatus?
+  toStatus      OrderStatus
+  changedById   String?
+  changedByRole String?
+  note          String?
+  createdAt     DateTime     @default(now())
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, createdAt])
+}
+
+model OrderCancellationRequest {
+  id            String                    @id @default(cuid())
+  orderId       String
+  order         Order                     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  requestedById String
+  reason        String?
+  status        CancellationRequestStatus @default(PENDING)
+  reviewedById  String?
+  reviewNote    String?
+  createdAt     DateTime                  @default(now())
+  reviewedAt    DateTime?
+
+  @@index([status, createdAt])
+  @@index([orderId, status])
 }
 
 model UserAddress {

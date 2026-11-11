@@ -13,7 +13,9 @@ type OrderStatus =
   | "CONFIRMED"
   | "PREPARING"
   | "READY"
-  | "DELIVERING"
+  | "SERVED"
+  | "OUT_FOR_DELIVERY"
+  | "DELIVERED"
   | "COMPLETED"
   | "CANCELLED"
   | "REFUNDED";
@@ -24,6 +26,7 @@ type StaffOrder = {
   status: OrderStatus;
   type: "TAKEAWAY" | "DELIVERY";
   createdAt: string;
+  statusUpdatedAt: string;
   note?: string | null;
   customerName?: string;
   customerPhone?: string;
@@ -38,6 +41,7 @@ type StaffOrder = {
     amount: number;
     amountTendered?: number | null;
     changeDue?: number | null;
+    refundedAmount?: number;
   } | null;
   assignedCashier?: { id: string; name: string } | null;
   assignedBarista?: { id: string; name: string } | null;
@@ -51,31 +55,46 @@ type StaffOrder = {
 };
 
 type StaffOption = { id: string; name: string; role: AuthRole };
+type StatusHistoryEntry = {
+  fromStatus: OrderStatus | null;
+  toStatus: OrderStatus;
+  changedByRole: string | null;
+  note: string | null;
+  createdAt: string;
+};
 
 const statusNames: Record<OrderStatus, string> = {
   PENDING: "Chờ xác nhận",
   CONFIRMED: "Đã xác nhận",
   PREPARING: "Đang pha chế",
   READY: "Đã pha xong",
-  DELIVERING: "Đang giao",
+  SERVED: "Đã phục vụ",
+  OUT_FOR_DELIVERY: "Đang giao",
+  DELIVERED: "Đã giao",
   COMPLETED: "Hoàn thành",
   CANCELLED: "Đã hủy",
   REFUNDED: "Đã hoàn tiền",
 };
 
-function nextStatuses(role: AuthRole, status: OrderStatus): OrderStatus[] {
+function nextStatuses(
+  role: AuthRole,
+  status: OrderStatus,
+  type: StaffOrder["type"],
+): OrderStatus[] {
   return (
     [
       "PENDING",
       "CONFIRMED",
       "PREPARING",
       "READY",
-      "DELIVERING",
+      "SERVED",
+      "OUT_FOR_DELIVERY",
+      "DELIVERED",
       "COMPLETED",
       "CANCELLED",
       "REFUNDED",
     ] satisfies OrderStatus[]
-  ).filter((nextStatus) => canTransitionOrder(role, status, nextStatus));
+  ).filter((nextStatus) => canTransitionOrder(role, status, nextStatus, type));
 }
 
 export function OrderOperations({ role }: { role: AuthRole }) {
@@ -87,10 +106,17 @@ export function OrderOperations({ role }: { role: AuthRole }) {
   >({});
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [employeeFilter, setEmployeeFilter] = useState("");
+  const [fromFilter, setFromFilter] = useState("");
+  const [toFilter, setToFilter] = useState("");
   const [page, setPage] = useState(1);
   const [totalOrders, setTotalOrders] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [historyByCode, setHistoryByCode] = useState<
+    Record<string, StatusHistoryEntry[]>
+  >({});
 
   const loadOrders = useCallback(async () => {
     try {
@@ -98,7 +124,17 @@ export function OrderOperations({ role }: { role: AuthRole }) {
       params.set("page", String(page));
       if (query.trim()) params.set("q", query.trim());
       if (statusFilter) params.set("status", statusFilter);
-      const response = await fetch(`/api/admin/orders?${params}`);
+      if (typeFilter) params.set("type", typeFilter);
+      if (employeeFilter) params.set("employeeId", employeeFilter);
+      if (fromFilter) params.set("from", fromFilter);
+      if (toFilter) params.set("to", toFilter);
+      const endpoint =
+        role === "CASHIER"
+          ? "/api/cashier/orders"
+          : role === "BARISTA"
+            ? "/api/barista/queue"
+            : "/api/admin/orders";
+      const response = await fetch(`${endpoint}?${params}`);
       const result = (await response.json()) as {
         orders?: StaffOrder[];
         total?: number;
@@ -127,7 +163,16 @@ export function OrderOperations({ role }: { role: AuthRole }) {
     } finally {
       setLoading(false);
     }
-  }, [page, query, statusFilter]);
+  }, [
+    employeeFilter,
+    fromFilter,
+    page,
+    query,
+    role,
+    statusFilter,
+    toFilter,
+    typeFilter,
+  ]);
 
   useEffect(() => {
     void Promise.resolve().then(loadOrders);
@@ -156,12 +201,29 @@ export function OrderOperations({ role }: { role: AuthRole }) {
   async function sendAction(code: string, action: Record<string, unknown>) {
     setError("");
     try {
+      const actionName = action.action;
+      const endpoint =
+        actionName === "ASSIGN"
+          ? `/api/admin/orders/${encodeURIComponent(code)}`
+          : actionName === "CONFIRM_PAYMENT"
+            ? `/api/orders/${encodeURIComponent(code)}/payment`
+            : actionName === "REFUND"
+              ? `/api/orders/${encodeURIComponent(code)}/refund`
+              : `/api/orders/${encodeURIComponent(code)}/status`;
+      const body =
+        actionName === "ASSIGN"
+          ? action
+          : actionName === "CONFIRM_PAYMENT"
+            ? { amountTendered: action.amountTendered }
+            : actionName === "REFUND"
+              ? { amount: action.amount, note: action.note }
+              : { status: action.status, note: action.note };
       const response = await fetch(
-        `/api/admin/orders/${encodeURIComponent(code)}`,
+        endpoint,
         {
-          method: "PATCH",
+          method: actionName === "REFUND" ? "POST" : "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(action),
+          body: JSON.stringify(body),
         },
       );
       const result = (await response.json()) as { error?: string };
@@ -170,6 +232,34 @@ export function OrderOperations({ role }: { role: AuthRole }) {
         return;
       }
       await loadOrders();
+    } catch {
+      setError("Không thể kết nối máy chủ");
+    }
+  }
+
+  async function toggleHistory(code: string) {
+    if (historyByCode[code]) {
+      setHistoryByCode((current) => {
+        const next = { ...current };
+        delete next[code];
+        return next;
+      });
+      return;
+    }
+    try {
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(code)}/history`,
+        { cache: "no-store" },
+      );
+      const result = (await response.json()) as {
+        history?: StatusHistoryEntry[];
+        error?: string;
+      };
+      if (!response.ok || !result.history) {
+        setError(result.error ?? "Không thể tải lịch sử đơn hàng");
+        return;
+      }
+      setHistoryByCode((current) => ({ ...current, [code]: result.history! }));
     } catch {
       setError("Không thể kết nối máy chủ");
     }
@@ -192,6 +282,25 @@ export function OrderOperations({ role }: { role: AuthRole }) {
       return;
     }
     void sendAction(order.code, { action: "CONFIRM_PAYMENT", amountTendered });
+  }
+
+  function refundPayment(order: StaffOrder) {
+    if (!order.payment) return;
+    const remaining = order.payment.amount - (order.payment.refundedAmount ?? 0);
+    const entered = window.prompt(
+      `Còn có thể hoàn ${remaining.toLocaleString("vi-VN")}đ. Nhập số tiền hoàn, để trống để hoàn toàn bộ:`,
+    );
+    if (entered === null) return;
+    if (!entered.trim()) {
+      void sendAction(order.code, { action: "REFUND" });
+      return;
+    }
+    const amount = Number(entered);
+    if (!Number.isSafeInteger(amount) || amount <= 0 || amount > remaining) {
+      setError("Số tiền hoàn không hợp lệ hoặc vượt quá số tiền còn lại.");
+      return;
+    }
+    void sendAction(order.code, { action: "REFUND", amount });
   }
 
   function printReceipt(order: StaffOrder) {
@@ -349,16 +458,67 @@ export function OrderOperations({ role }: { role: AuthRole }) {
               </option>
             ))}
           </select>
+          {role === "ADMIN" || role === "MANAGER" ? (
+            <>
+              <select
+                className="rounded-lg border border-border bg-background px-3 py-2"
+                value={typeFilter}
+                onChange={(event) => {
+                  setTypeFilter(event.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">Mọi hình thức nhận</option>
+                <option value="TAKEAWAY">Nhận tại quán</option>
+                <option value="DELIVERY">Giao hàng</option>
+              </select>
+              <select
+                className="rounded-lg border border-border bg-background px-3 py-2"
+                value={employeeFilter}
+                onChange={(event) => {
+                  setEmployeeFilter(event.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">Mọi nhân viên</option>
+                {[...cashiers, ...baristas].map((employee) => (
+                  <option key={employee.id} value={employee.id}>
+                    {employee.name} ({employee.role})
+                  </option>
+                ))}
+              </select>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                Từ
+                <input
+                  className="rounded-lg border border-border bg-background px-2 py-2"
+                  type="date"
+                  value={fromFilter}
+                  onChange={(event) => {
+                    setFromFilter(event.target.value);
+                    setPage(1);
+                  }}
+                />
+              </label>
+              <label className="flex items-center gap-2 text-sm text-muted-foreground">
+                Đến
+                <input
+                  className="rounded-lg border border-border bg-background px-2 py-2"
+                  type="date"
+                  value={toFilter}
+                  onChange={(event) => {
+                    setToFilter(event.target.value);
+                    setPage(1);
+                  }}
+                />
+              </label>
+            </>
+          ) : null}
         </div>
         {error ? <p className="text-sm text-red-700" role="alert">{error}</p> : null}
         {loading ? <p role="status">Đang tải đơn hàng...</p> : null}
         <div className="grid gap-4">
           {orders.map((order) => {
-            const transitions = nextStatuses(role, order.status).filter(
-              (status) =>
-                status !== "CANCELLED" ||
-                order.payment?.status !== "PAID",
-            );
+            const transitions = nextStatuses(role, order.status, order.type);
             const assignment = assignments[order.id] ?? {
               cashierId: "",
               baristaId: "",
@@ -377,6 +537,10 @@ export function OrderOperations({ role }: { role: AuthRole }) {
                     <p className="text-sm text-muted-foreground">
                       {statusNames[order.status]} ·{" "}
                       {order.type === "DELIVERY" ? "Giao hàng" : "Đến lấy"}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Cập nhật{" "}
+                      {new Date(order.statusUpdatedAt).toLocaleString("vi-VN")}
                     </p>
                   </div>
                   <div className="flex items-center justify-between gap-3">
@@ -517,7 +681,8 @@ export function OrderOperations({ role }: { role: AuthRole }) {
                   </div>
                 ) : null}
                 <div className="flex flex-wrap gap-2 border-t border-border pt-3">
-                  {order.payment?.status === "PENDING" &&
+                  {(order.payment?.status === "UNPAID" ||
+                    order.payment?.status === "FAILED") &&
                   (                                    rolePermissions.paymentOperations.some(
                     (allowedRole) => allowedRole === role,
                   )) ? (
@@ -535,7 +700,7 @@ export function OrderOperations({ role }: { role: AuthRole }) {
                       variant="outline"
                       onClick={() =>
                         status === "REFUNDED"
-                          ? void sendAction(order.code, { action: "REFUND" })
+                          ? refundPayment(order)
                           : void sendAction(order.code, {
                               action: "STATUS",
                               status,
@@ -548,6 +713,43 @@ export function OrderOperations({ role }: { role: AuthRole }) {
                     </Button>
                   ))}
                 </div>
+                {role === "ADMIN" || role === "MANAGER" ? (
+                  <div className="border-t border-border pt-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => void toggleHistory(order.code)}
+                    >
+                      {historyByCode[order.code]
+                        ? "Ẩn lịch sử trạng thái"
+                        : "Xem lịch sử trạng thái"}
+                    </Button>
+                    {historyByCode[order.code] ? (
+                      <ol className="mt-3 grid gap-2">
+                        {historyByCode[order.code].map((entry, index) => (
+                          <li
+                            key={`${entry.createdAt}-${index}`}
+                            className="rounded-lg bg-background px-3 py-2 text-sm"
+                          >
+                            {entry.fromStatus
+                              ? `${statusNames[entry.fromStatus]} → `
+                              : ""}
+                            <span className="font-medium">
+                              {statusNames[entry.toStatus]}
+                            </span>
+                            {entry.changedByRole
+                              ? ` · ${entry.changedByRole}`
+                              : ""}
+                            {entry.note ? ` · ${entry.note}` : ""}
+                            <span className="block text-xs text-muted-foreground">
+                              {new Date(entry.createdAt).toLocaleString("vi-VN")}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    ) : null}
+                  </div>
+                ) : null}
               </article>
             );
           })}

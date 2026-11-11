@@ -18,6 +18,10 @@ export async function GET(request: Request) {
     page: params.get("page") ?? undefined,
     status: params.get("status") ?? undefined,
     q: params.get("q") ?? undefined,
+    type: params.get("type") ?? undefined,
+    employeeId: params.get("employeeId") ?? undefined,
+    from: params.get("from") ?? undefined,
+    to: params.get("to") ?? undefined,
   });
   if (!parsed.success) {
     return NextResponse.json({ error: "Bộ lọc đơn hàng không hợp lệ" }, { status: 400 });
@@ -26,6 +30,29 @@ export async function GET(request: Request) {
   const filters: Prisma.OrderWhereInput[] = [];
   if (parsed.data.status) {
     filters.push({ status: parsed.data.status });
+  }
+  if (parsed.data.type) filters.push({ type: parsed.data.type });
+  if (parsed.data.from || parsed.data.to) {
+    const dateFilter: Prisma.DateTimeFilter<"Order"> = {};
+    if (parsed.data.from) {
+      dateFilter.gte = new Date(`${parsed.data.from}T00:00:00+07:00`);
+    }
+    if (parsed.data.to) {
+      dateFilter.lt = new Date(
+        new Date(`${parsed.data.to}T00:00:00+07:00`).getTime() +
+          24 * 60 * 60 * 1000,
+      );
+    }
+    filters.push({ createdAt: dateFilter });
+  }
+  if (parsed.data.employeeId) {
+    filters.push({
+      OR: [
+        { createdById: parsed.data.employeeId },
+        { assignedCashierId: parsed.data.employeeId },
+        { assignedBaristaId: parsed.data.employeeId },
+      ],
+    });
   }
   if (parsed.data.q) {
     filters.push({
@@ -54,9 +81,22 @@ export async function GET(request: Request) {
     filters.push({
       OR: [{ assignedCashierId: actor.id }, { createdById: actor.id }],
     });
+    filters.push({
+      status: {
+        in: [
+          "PENDING",
+          "CONFIRMED",
+          "READY",
+          "SERVED",
+          "OUT_FOR_DELIVERY",
+          "DELIVERED",
+        ],
+      },
+    });
   }
   if (actor.role === "BARISTA") {
     filters.push({ assignedBaristaId: actor.id });
+    filters.push({ status: { in: ["CONFIRMED", "PREPARING", "READY"] } });
   }
   const where: Prisma.OrderWhereInput = { AND: filters };
 
@@ -74,6 +114,7 @@ export async function GET(request: Request) {
             status: true,
             type: true,
             note: true,
+            statusUpdatedAt: true,
             createdAt: true,
             items: {
               select: {
@@ -100,6 +141,7 @@ export async function GET(request: Request) {
           id: true,
           code: true,
           status: true,
+          paymentStatus: true,
           type: true,
           customerName: true,
           customerPhone: true,
@@ -109,6 +151,7 @@ export async function GET(request: Request) {
           discount: true,
           deliveryFee: true,
           total: true,
+          statusUpdatedAt: true,
           createdAt: true,
           createdBy: { select: { id: true, name: true, role: true } },
           assignedCashier: { select: { id: true, name: true } },
@@ -130,6 +173,7 @@ export async function GET(request: Request) {
               amount: true,
               amountTendered: true,
               changeDue: true,
+              refundedAmount: true,
               paidAt: true,
             },
           },

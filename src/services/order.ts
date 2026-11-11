@@ -255,6 +255,8 @@ async function createOrderAttempt(
         ...(input.type === "DELIVERY" ? { address: input.address } : {}),
         ...(input.note !== undefined ? { note: input.note } : {}),
         status: "PENDING",
+        paymentStatus: "UNPAID",
+        statusUpdatedAt: new Date(),
         subtotal: totals.subtotal,
         discount: totals.discount,
         deliveryFee: totals.deliveryFee,
@@ -264,8 +266,17 @@ async function createOrderAttempt(
         payment: {
           create: {
             method: input.paymentMethod,
-            status: "PENDING",
+            status: "UNPAID",
             amount: totals.total,
+          },
+        },
+        statusHistory: {
+          create: {
+            fromStatus: null,
+            toStatus: "PENDING",
+            changedById: actor?.id ?? null,
+            changedByRole: actor?.role ?? null,
+            note: "Đơn hàng được tạo",
           },
         },
       },

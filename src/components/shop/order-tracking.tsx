@@ -14,9 +14,12 @@ type TrackedOrder = {
     | "CONFIRMED"
     | "PREPARING"
     | "READY"
-    | "DELIVERING"
+    | "SERVED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
     | "COMPLETED"
-    | "CANCELLED";
+    | "CANCELLED"
+    | "REFUNDED";
   type: "TAKEAWAY" | "DELIVERY";
   items: Array<{
     name: string;
@@ -28,7 +31,9 @@ type TrackedOrder = {
   deliveryFee: number;
   total: number;
   payment: { method: string; status: string } | null;
+  paymentStatus: string;
   createdAt: string;
+  statusUpdatedAt: string;
 };
 
 type TrackResult = {
@@ -41,27 +46,40 @@ const statusLabels: Record<TrackedOrder["status"], string> = {
   CONFIRMED: "Đã xác nhận",
   PREPARING: "Đang chuẩn bị",
   READY: "Sẵn sàng",
-  DELIVERING: "Đang giao hàng",
+  SERVED: "Đã phục vụ",
+  OUT_FOR_DELIVERY: "Đang giao hàng",
+  DELIVERED: "Đã giao hàng",
   COMPLETED: "Hoàn tất",
   CANCELLED: "Đã hủy",
+  REFUNDED: "Đã hoàn tiền",
 };
 
 const paymentLabels: Record<string, string> = {
   CASH: "Tiền mặt",
   BANK_TRANSFER: "Chuyển khoản",
   MOMO: "MoMo",
-  PENDING: "Chờ thanh toán",
+  UNPAID: "Chưa thanh toán",
   PAID: "Đã thanh toán",
   FAILED: "Thanh toán thất bại",
   REFUNDED: "Đã hoàn tiền",
+  PARTIALLY_REFUNDED: "Đã hoàn tiền một phần",
 };
 
-const flow: TrackedOrder["status"][] = [
+const pickupFlow: TrackedOrder["status"][] = [
   "PENDING",
   "CONFIRMED",
   "PREPARING",
   "READY",
-  "DELIVERING",
+  "SERVED",
+  "COMPLETED",
+];
+const deliveryFlow: TrackedOrder["status"][] = [
+  "PENDING",
+  "CONFIRMED",
+  "PREPARING",
+  "READY",
+  "OUT_FOR_DELIVERY",
+  "DELIVERED",
   "COMPLETED",
 ];
 
@@ -126,7 +144,8 @@ export function OrderTracking({
 
         terminalStatus.current =
           result.order.status === "COMPLETED" ||
-          result.order.status === "CANCELLED";
+          result.order.status === "CANCELLED" ||
+          result.order.status === "REFUNDED";
         if (active) {
           setOrder(result.order);
           setError("");
@@ -204,10 +223,7 @@ export function OrderTracking({
     );
   }
 
-  const statuses =
-    order.type === "DELIVERY"
-      ? flow
-      : flow.filter((status) => status !== "DELIVERING");
+  const statuses = order.type === "DELIVERY" ? deliveryFlow : pickupFlow;
   const currentIndex = statuses.indexOf(order.status);
   const createdAt = new Date(order.createdAt);
 
@@ -235,9 +251,9 @@ export function OrderTracking({
             timeStyle: "short",
           })}
         </p>
-        {order.status === "CANCELLED" ? (
+        {order.status === "CANCELLED" || order.status === "REFUNDED" ? (
           <p className="mt-6 rounded-xl bg-red-50 px-4 py-3 font-semibold text-red-800">
-            Đơn hàng đã được hủy.
+            Đơn hàng {statusLabels[order.status].toLowerCase()}.
           </p>
         ) : (
           <ol className="mt-8 grid gap-3 sm:grid-cols-3">
@@ -269,7 +285,7 @@ export function OrderTracking({
             })}
           </ol>
         )}
-        {order.status !== "CANCELLED" ? (
+        {order.status !== "CANCELLED" && order.status !== "REFUNDED" ? (
           <p className="mt-4 text-sm text-muted-foreground">
             Trạng thái hiện tại:{" "}
             <span className="font-semibold text-primary">
@@ -277,6 +293,13 @@ export function OrderTracking({
             </span>
           </p>
         ) : null}
+        <p className="mt-2 text-xs text-muted-foreground">
+          Cập nhật lần cuối:{" "}
+          {new Date(order.statusUpdatedAt).toLocaleString("vi-VN", {
+            dateStyle: "medium",
+            timeStyle: "short",
+          })}
+        </p>
       </section>
 
       <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-7">
@@ -321,7 +344,7 @@ export function OrderTracking({
             <p className="mt-1 text-muted-foreground">
               Trạng thái:{" "}
               <span className="font-medium text-foreground">
-                {paymentLabels[order.payment.status] ?? order.payment.status}
+                {paymentLabels[order.paymentStatus] ?? order.paymentStatus}
               </span>
             </p>
           </div>

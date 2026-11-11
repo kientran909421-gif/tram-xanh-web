@@ -13,7 +13,9 @@ type AccountOrder = {
     | "CONFIRMED"
     | "PREPARING"
     | "READY"
-    | "DELIVERING"
+    | "SERVED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
     | "COMPLETED"
     | "CANCELLED"
     | "REFUNDED";
@@ -23,6 +25,8 @@ type AccountOrder = {
   deliveryFee: number;
   total: number;
   createdAt: string;
+  statusUpdatedAt: string;
+  paymentStatus: string;
   items: Array<{
     id: string;
     name: string;
@@ -31,6 +35,7 @@ type AccountOrder = {
     reviews: { id: string }[];
   }>;
   payment: { method: string; status: string } | null;
+  cancellationRequests: { status: "PENDING" | "APPROVED" | "REJECTED" }[];
 };
 
 type OrdersResponse = {
@@ -48,21 +53,25 @@ const statusLabels: Record<AccountOrder["status"], string> = {
   CONFIRMED: "Đã xác nhận",
   PREPARING: "Đang chuẩn bị",
   READY: "Sẵn sàng",
-  DELIVERING: "Đang giao",
+  SERVED: "Đã phục vụ",
+  OUT_FOR_DELIVERY: "Đang giao",
+  DELIVERED: "Đã giao",
   COMPLETED: "Hoàn tất",
   CANCELLED: "Đã hủy",
   REFUNDED: "Đã hoàn tiền",
 };
 
 const statusStyles: Record<AccountOrder["status"], string> = {
-  PENDING: "bg-accent text-primary",
+  PENDING: "bg-gray-100 text-gray-800",
   CONFIRMED: "bg-sky-100 text-sky-900",
-  PREPARING: "bg-indigo-100 text-indigo-900",
+  PREPARING: "bg-amber-100 text-amber-900",
   READY: "bg-emerald-100 text-emerald-900",
-  DELIVERING: "bg-violet-100 text-violet-900",
+  SERVED: "bg-emerald-200 text-emerald-950",
+  OUT_FOR_DELIVERY: "bg-violet-100 text-violet-900",
+  DELIVERED: "bg-green-200 text-green-950",
   COMPLETED: "bg-green-100 text-green-900",
   CANCELLED: "bg-red-100 text-red-900",
-  REFUNDED: "bg-muted text-muted-foreground",
+  REFUNDED: "bg-orange-100 text-orange-900",
 };
 
 function optionNames(value: unknown): string[] {
@@ -153,16 +162,38 @@ export function AccountOrders() {
     setError("");
     try {
       const response = await fetch(
-        `/api/me/orders/${encodeURIComponent(code)}`,
+        `/api/orders/${encodeURIComponent(code)}/cancel`,
         {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ action: "CANCEL" }),
+          body: JSON.stringify({}),
         },
       );
       const result = (await response.json()) as { error?: string };
       if (!response.ok) {
         setError(result.error ?? "Không thể hủy đơn hàng");
+        return;
+      }
+      setRefreshIndex((current) => current + 1);
+    } catch {
+      setError("Không thể kết nối máy chủ");
+    }
+  }
+
+  async function requestCancellation(code: string) {
+    setError("");
+    try {
+      const response = await fetch(
+        `/api/orders/${encodeURIComponent(code)}/cancel-request`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
+      const result = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        setError(result.error ?? "Không thể gửi yêu cầu hủy đơn");
         return;
       }
       setRefreshIndex((current) => current + 1);
@@ -256,6 +287,7 @@ export function AccountOrders() {
                   </button>
                   {expanded ? (
                     <div className="border-t border-muted bg-card px-5 py-4">
+                      <OrderTimeline order={order} />
                       <h2 className="font-semibold text-foreground">
                         Chi tiết đơn hàng
                       </h2>
@@ -295,7 +327,8 @@ export function AccountOrders() {
                         {order.payment ? (
                           <p className="mt-1">
                             Thanh toán: {order.payment.method} ·{" "}
-                            {order.payment.status}
+                            {paymentStatusLabels[order.paymentStatus] ??
+                              order.paymentStatus}
                           </p>
                         ) : null}
                         <Link
@@ -305,6 +338,28 @@ export function AccountOrders() {
                           Tra cứu đơn hàng
                         </Link>
                       </div>
+                      {order.status === "CONFIRMED" ? (
+                        <div className="mt-4 border-t border-muted pt-3">
+                          {order.cancellationRequests[0]?.status === "PENDING" ? (
+                            <p className="text-sm text-muted-foreground">
+                              Yêu cầu hủy đang chờ cửa hàng duyệt.
+                            </p>
+                          ) : (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              onClick={() => void requestCancellation(order.code)}
+                            >
+                              Yêu cầu hủy đơn
+                            </Button>
+                          )}
+                          {order.cancellationRequests[0]?.status === "REJECTED" ? (
+                            <p className="mt-2 text-sm text-muted-foreground">
+                              Yêu cầu trước đó đã bị từ chối.
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
                   {order.status === "PENDING" ? (
@@ -349,6 +404,63 @@ export function AccountOrders() {
         </>
       )}
     </main>
+  );
+}
+
+const paymentStatusLabels: Record<string, string> = {
+  UNPAID: "Chưa thanh toán",
+  PAID: "Đã thanh toán",
+  FAILED: "Thanh toán thất bại",
+  REFUNDED: "Đã hoàn tiền",
+  PARTIALLY_REFUNDED: "Đã hoàn tiền một phần",
+};
+
+function OrderTimeline({ order }: { order: AccountOrder }) {
+  const statuses =
+    order.type === "DELIVERY"
+      ? [
+          "PENDING",
+          "CONFIRMED",
+          "PREPARING",
+          "READY",
+          "OUT_FOR_DELIVERY",
+          "DELIVERED",
+          "COMPLETED",
+        ]
+      : ["PENDING", "CONFIRMED", "PREPARING", "READY", "SERVED", "COMPLETED"];
+  const currentIndex = statuses.indexOf(order.status);
+
+  return (
+    <section className="mb-5 rounded-xl border border-border bg-background p-4">
+      <h3 className="font-semibold text-foreground">Tiến trình đơn hàng</h3>
+      {order.status === "CANCELLED" || order.status === "REFUNDED" ? (
+        <p className="mt-2 text-sm text-muted-foreground">
+          Đơn {statusLabels[order.status].toLowerCase()}.
+        </p>
+      ) : (
+        <ol className="mt-3 flex flex-wrap gap-2">
+          {statuses.map((status, index) => (
+            <li
+              key={status}
+              className={`rounded-full px-3 py-1 text-xs font-medium ${
+                index <= currentIndex
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {statusLabels[status as AccountOrder["status"]]}
+            </li>
+          ))}
+        </ol>
+      )}
+      <p className="mt-3 text-xs text-muted-foreground">
+        Cập nhật lúc{" "}
+        {new Date(order.statusUpdatedAt).toLocaleString("vi-VN", {
+          dateStyle: "medium",
+          timeStyle: "short",
+        })}
+      </p>
+    </section>
   );
 }
 

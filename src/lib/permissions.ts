@@ -1,4 +1,5 @@
 import { authRoles, type AuthRole } from "./auth.config";
+import type { OrderStatus, OrderType } from "@prisma/client";
 
 export const rolePermissions = {
   staffManagement: ["ADMIN", "MANAGER"],
@@ -13,7 +14,7 @@ export const rolePermissions = {
   orderAssignment: ["ADMIN", "MANAGER"],
   paymentOperations: ["ADMIN", "MANAGER", "CASHIER"],
   refund: ["ADMIN", "MANAGER"],
-  counterOrders: ["ADMIN", "MANAGER", "CASHIER"],
+  counterOrders: ["ADMIN", "CASHIER"],
   inventoryAlertReporting: ["BARISTA"],
 } as const satisfies Record<string, readonly AuthRole[]>;
 
@@ -121,48 +122,62 @@ export function getVisibleAdminNavigation(role: AuthRole) {
 
 export function canTransitionOrder(
   role: AuthRole,
-  from: string,
-  to: string,
+  from: OrderStatus,
+  to: OrderStatus,
+  type: OrderType,
 ): boolean {
   if (from === to) {
     return false;
   }
 
-  if (to === "CANCELLED") {
-    if (role === "CASHIER") {
-      return from === "PENDING";
-    }
-    return (
-      ["ADMIN", "MANAGER"].includes(role) &&
-      !["COMPLETED", "CANCELLED", "REFUNDED"].includes(from)
-    );
-  }
   if (to === "REFUNDED") {
     return (
       (role === "ADMIN" || role === "MANAGER") &&
-      (from === "COMPLETED" || from === "CANCELLED")
+      from !== "REFUNDED"
     );
   }
 
-  if (role === "ADMIN" || role === "MANAGER") {
+  if (to === "CANCELLED") {
+    if (role === "CUSTOMER" || role === "CASHIER") {
+      return from === "PENDING" || (role === "CASHIER" && from === "CONFIRMED");
+    }
     return (
-      (from === "PENDING" && to === "CONFIRMED") ||
-      (from === "CONFIRMED" && to === "PREPARING") ||
-      (from === "PREPARING" && to === "READY") ||
-      (from === "READY" && (to === "DELIVERING" || to === "COMPLETED")) ||
-      (from === "DELIVERING" && to === "COMPLETED")
+      (role === "ADMIN" || role === "MANAGER") &&
+      ["PENDING", "CONFIRMED", "PREPARING", "READY"].includes(from)
     );
   }
-  if (role === "CASHIER") {
+
+  if (from === "PENDING" && to === "CONFIRMED") {
+    return ["ADMIN", "MANAGER", "CASHIER"].includes(role);
+  }
+  if (from === "CONFIRMED" && to === "PREPARING") {
+    return role === "BARISTA" || role === "ADMIN";
+  }
+  if (from === "PREPARING" && to === "READY") {
+    return role === "BARISTA" || role === "ADMIN";
+  }
+  if (from === "READY" && to === "SERVED") {
+    return type === "TAKEAWAY" && (role === "CASHIER" || role === "ADMIN");
+  }
+  if (from === "READY" && to === "OUT_FOR_DELIVERY") {
     return (
-      (from === "PENDING" && to === "CONFIRMED") ||
-      ((from === "READY" || from === "DELIVERING") && to === "COMPLETED")
+      type === "DELIVERY" &&
+      ["ADMIN", "MANAGER", "CASHIER"].includes(role)
     );
   }
-  if (role === "BARISTA") {
+  if (from === "OUT_FOR_DELIVERY" && to === "DELIVERED") {
     return (
-      (from === "CONFIRMED" && to === "PREPARING") ||
-      (from === "PREPARING" && to === "READY")
+      type === "DELIVERY" &&
+      ["ADMIN", "MANAGER", "CASHIER"].includes(role)
+    );
+  }
+  if (from === "SERVED" && to === "COMPLETED") {
+    return type === "TAKEAWAY" && (role === "CASHIER" || role === "ADMIN");
+  }
+  if (from === "DELIVERED" && to === "COMPLETED") {
+    return (
+      type === "DELIVERY" &&
+      ["ADMIN", "MANAGER", "CASHIER"].includes(role)
     );
   }
   return false;
