@@ -14,8 +14,8 @@ export function CartLine({ item }: { item: CartItem }) {
   const updateNote = useCartStore((state) => state.updateNote);
 
   return (
-    <article className="grid gap-4 border-b border-[#e9e0d2] py-5 sm:grid-cols-[5rem_1fr]">
-      <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-[#efe3d2] to-[#c6a27e] text-[#714d34]">
+    <article className="grid gap-4 border-b border-border py-5 sm:grid-cols-[5rem_1fr]">
+      <div className="relative flex aspect-square items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-accent to-ring text-primary">
         {item.imageUrl ? (
           <Image
             src={item.imageUrl}
@@ -32,8 +32,8 @@ export function CartLine({ item }: { item: CartItem }) {
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="font-semibold text-[#3f2d22]">{item.name}</h3>
-            <p className="mt-1 text-sm font-medium text-[#754c32]">
+            <h3 className="font-semibold text-foreground">{item.name}</h3>
+            <p className="mt-1 text-sm font-medium text-primary">
               {formatVND(item.unitPrice)}
             </p>
           </div>
@@ -52,7 +52,7 @@ export function CartLine({ item }: { item: CartItem }) {
           <ul className="mt-2 flex flex-wrap gap-1.5">
             {item.options.map((option) => (
               <li
-                className="rounded-full bg-[#f3ede4] px-2.5 py-1 text-xs text-stone-700"
+                className="rounded-full bg-muted px-2.5 py-1 text-xs text-foreground"
                 key={option.id}
               >
                 {option.name}
@@ -63,10 +63,10 @@ export function CartLine({ item }: { item: CartItem }) {
             ))}
           </ul>
         ) : null}
-        <label className="mt-3 grid gap-1.5 text-xs font-medium text-stone-600">
+        <label className="mt-3 grid gap-1.5 text-xs font-medium text-muted-foreground">
           Ghi chú
           <input
-            className="h-9 rounded-lg border border-[#e2d5c4] bg-white px-3 text-sm text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-[#a78361]"
+            className="h-9 rounded-lg border border-border bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
             value={item.note}
             onChange={(event) => updateNote(item.key, event.target.value)}
             placeholder="Thêm ghi chú"
@@ -74,9 +74,9 @@ export function CartLine({ item }: { item: CartItem }) {
           />
         </label>
         <div className="mt-3 flex items-center justify-between gap-3">
-          <div className="flex items-center rounded-full border border-[#e2d5c4]">
+          <div className="flex items-center rounded-full border border-border">
             <button
-              className="size-9 rounded-full text-lg hover:bg-[#f8f4ed] disabled:opacity-40"
+              className="size-9 rounded-full text-lg hover:bg-background disabled:opacity-40"
               type="button"
               onClick={() => updateQuantity(item.key, item.quantity - 1)}
               disabled={item.quantity <= 1}
@@ -88,7 +88,7 @@ export function CartLine({ item }: { item: CartItem }) {
               {item.quantity}
             </span>
             <button
-              className="size-9 rounded-full text-lg hover:bg-[#f8f4ed] disabled:opacity-40"
+              className="size-9 rounded-full text-lg hover:bg-background disabled:opacity-40"
               type="button"
               onClick={() => updateQuantity(item.key, item.quantity + 1)}
               disabled={item.quantity >= 99}
@@ -97,7 +97,7 @@ export function CartLine({ item }: { item: CartItem }) {
               +
             </button>
           </div>
-          <p className="text-sm font-semibold text-[#513625]">
+          <p className="text-sm font-semibold text-primary">
             {formatVND(item.unitPrice * item.quantity)}
           </p>
         </div>

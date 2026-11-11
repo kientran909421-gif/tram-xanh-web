@@ -22,14 +22,14 @@ export function CartDrawer({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-40 bg-stone-950/45 transition-opacity data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
-        <Dialog.Popup className="fixed inset-y-0 right-0 z-50 flex w-[min(30rem,100vw)] flex-col bg-[#fffdf9] shadow-2xl outline-none">
-          <header className="flex items-center justify-between border-b border-[#e9e0d2] px-5 py-4">
+        <Dialog.Backdrop className="fixed inset-0 z-40 bg-foreground/45 transition-opacity data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
+        <Dialog.Popup className="fixed inset-y-0 right-0 z-50 flex w-[min(30rem,100vw)] flex-col bg-card shadow-2xl outline-none">
+          <header className="flex items-center justify-between border-b border-border px-5 py-4">
             <div>
-              <Dialog.Title className="text-lg font-semibold text-[#3f2d22]">
+              <Dialog.Title className="text-lg font-semibold text-foreground">
                 Giỏ hàng
               </Dialog.Title>
-              <Dialog.Description className="mt-1 text-sm text-stone-600">
+              <Dialog.Description className="mt-1 text-sm text-muted-foreground">
                 Kiểm tra món trước khi đặt hàng.
               </Dialog.Description>
             </div>
@@ -53,22 +53,22 @@ export function CartDrawer({
             <CartItems />
           </div>
           {hasHydrated && items.length > 0 ? (
-            <footer className="grid gap-4 border-t border-[#e9e0d2] bg-white px-5 py-5">
+            <footer className="grid gap-4 border-t border-border bg-card px-5 py-5">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-stone-600">Tạm tính</span>
-                <span className="font-semibold text-[#513625]">
+                <span className="text-muted-foreground">Tạm tính</span>
+                <span className="font-semibold text-primary">
                   {formatVND(subtotal)}
                 </span>
               </div>
               <Link
-                className="inline-flex h-11 items-center justify-center rounded-full bg-[#68452f] px-5 text-sm font-semibold text-white hover:bg-[#513625]"
+                className="inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary"
                 href="/cart"
                 onClick={() => onOpenChange(false)}
               >
                 Xem giỏ hàng
               </Link>
               <Link
-                className="inline-flex h-11 items-center justify-center rounded-full border border-[#9d7959] px-5 text-sm font-semibold text-[#513625] hover:bg-[#f8f4ed]"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-muted-foreground px-5 text-sm font-semibold text-primary hover:bg-background"
                 href="/checkout"
                 onClick={() => onOpenChange(false)}
               >

@@ -170,8 +170,8 @@ export function OrderTracking({
   if (loading) {
     return (
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
-        <div className="h-52 animate-pulse rounded-2xl bg-[#e9e0d2]" />
-        <div className="mt-6 h-72 animate-pulse rounded-2xl bg-[#e9e0d2]" />
+        <div className="h-52 animate-pulse rounded-2xl bg-border" />
+        <div className="mt-6 h-72 animate-pulse rounded-2xl bg-border" />
       </main>
     );
   }
@@ -179,10 +179,10 @@ export function OrderTracking({
   if (error || !order) {
     return (
       <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-16 text-center">
-        <h1 className="text-2xl font-semibold text-[#3f2d22]">
+        <h1 className="text-2xl font-semibold text-foreground">
           Chưa tìm thấy đơn hàng
         </h1>
-        <p className="mt-3 text-stone-600">
+        <p className="mt-3 text-muted-foreground">
           {error || "Hãy kiểm tra lại mã đơn và số điện thoại bạn đã cung cấp."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
@@ -194,7 +194,7 @@ export function OrderTracking({
             Thử lại
           </Button>
           <Link
-            className="inline-flex h-9 items-center justify-center rounded-full bg-[#68452f] px-4 text-sm font-medium text-white hover:bg-[#513625]"
+            className="inline-flex h-9 items-center justify-center rounded-full bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary"
             href="/track"
           >
             Tra cứu lại
@@ -213,22 +213,22 @@ export function OrderTracking({
 
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
-      <section className="rounded-2xl border border-[#e9e0d2] bg-[#fbf8f2] p-5 sm:p-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#805a3b]">
+      <section className="rounded-2xl border border-border bg-background p-5 sm:p-8">
+        <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
           Theo dõi đơn hàng
         </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold tracking-wide text-[#3f2d22] sm:text-3xl">
+          <h1 className="text-2xl font-bold tracking-wide text-foreground sm:text-3xl">
             {order.code}
           </h1>
           <Button type="button" variant="outline" size="sm" onClick={copyCode}>
             Sao chép mã
           </Button>
         </div>
-        <p className="mt-3 text-sm text-stone-600">
+        <p className="mt-3 text-sm text-muted-foreground">
           Hãy lưu mã đơn và số điện thoại để theo dõi.
         </p>
-        <p className="mt-2 text-sm text-stone-600">
+        <p className="mt-2 text-sm text-muted-foreground">
           Đặt lúc{" "}
           {createdAt.toLocaleString("vi-VN", {
             dateStyle: "medium",
@@ -247,16 +247,16 @@ export function OrderTracking({
                 <li
                   className={`flex items-center gap-3 rounded-xl border px-3 py-3 ${
                     isComplete
-                      ? "border-[#9d7959] bg-white text-[#513625]"
-                      : "border-[#e9e0d2] bg-white/50 text-stone-500"
+                      ? "border-muted-foreground bg-card text-primary"
+                      : "border-border bg-card/50 text-muted-foreground"
                   }`}
                   key={status}
                 >
                   <span
                     className={`flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
                       isComplete
-                        ? "bg-[#68452f] text-white"
-                        : "bg-stone-200 text-stone-500"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {isComplete ? "✓" : index + 1}
@@ -270,37 +270,37 @@ export function OrderTracking({
           </ol>
         )}
         {order.status !== "CANCELLED" ? (
-          <p className="mt-4 text-sm text-stone-600">
+          <p className="mt-4 text-sm text-muted-foreground">
             Trạng thái hiện tại:{" "}
-            <span className="font-semibold text-[#68452f]">
+            <span className="font-semibold text-primary">
               {statusLabels[order.status]}
             </span>
           </p>
         ) : null}
       </section>
 
-      <section className="mt-6 rounded-2xl border border-[#e9e0d2] bg-white p-5 sm:p-7">
-        <h2 className="text-lg font-semibold text-[#3f2d22]">Chi tiết đơn</h2>
-        <ul className="mt-4 divide-y divide-[#eee6da]">
+      <section className="mt-6 rounded-2xl border border-border bg-card p-5 sm:p-7">
+        <h2 className="text-lg font-semibold text-foreground">Chi tiết đơn</h2>
+        <ul className="mt-4 divide-y divide-muted">
           {order.items.map((item, index) => (
             <li className="py-4" key={`${item.name}-${index}`}>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="font-medium text-stone-800">{item.name}</p>
+                  <p className="font-medium text-foreground">{item.name}</p>
                   {optionNames(item.options).length > 0 ? (
-                    <p className="mt-1 text-sm text-stone-600">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {optionNames(item.options).join(", ")}
                     </p>
                   ) : null}
                 </div>
-                <span className="shrink-0 text-sm text-stone-600">
+                <span className="shrink-0 text-sm text-muted-foreground">
                   × {item.quantity}
                 </span>
               </div>
             </li>
           ))}
         </ul>
-        <div className="mt-2 grid gap-3 border-t border-[#e9e0d2] pt-4 text-sm">
+        <div className="mt-2 grid gap-3 border-t border-border pt-4 text-sm">
           <PriceRow label="Tạm tính" value={formatVND(order.subtotal)} />
           <PriceRow label="Giảm giá" value={`−${formatVND(order.discount)}`} />
           <PriceRow label="Phí giao hàng" value={formatVND(order.deliveryFee)} />
@@ -311,16 +311,16 @@ export function OrderTracking({
           />
         </div>
         {order.payment ? (
-          <div className="mt-5 border-t border-[#e9e0d2] pt-4 text-sm">
-            <p className="text-stone-600">
+          <div className="mt-5 border-t border-border pt-4 text-sm">
+            <p className="text-muted-foreground">
               Thanh toán:{" "}
-              <span className="font-medium text-stone-800">
+              <span className="font-medium text-foreground">
                 {paymentLabels[order.payment.method] ?? order.payment.method}
               </span>
             </p>
-            <p className="mt-1 text-stone-600">
+            <p className="mt-1 text-muted-foreground">
               Trạng thái:{" "}
-              <span className="font-medium text-stone-800">
+              <span className="font-medium text-foreground">
                 {paymentLabels[order.payment.status] ?? order.payment.status}
               </span>
             </p>
@@ -344,12 +344,12 @@ function PriceRow({
     <div
       className={`flex items-center justify-between gap-4 ${
         emphasized
-          ? "border-t border-[#e9e0d2] pt-3 text-base font-semibold text-[#3f2d22]"
-          : "text-stone-600"
+          ? "border-t border-border pt-3 text-base font-semibold text-foreground"
+          : "text-muted-foreground"
       }`}
     >
       <span>{label}</span>
-      <span className={emphasized ? "text-[#513625]" : "text-stone-800"}>
+      <span className={emphasized ? "text-primary" : "text-foreground"}>
         {value}
       </span>
     </div>

@@ -109,9 +109,9 @@ function MenuItemDialogContent({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-40 bg-stone-950/55 transition-opacity data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
-        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-2xl bg-[#fffdf9] shadow-2xl outline-none">
-          <div className="relative aspect-[16/8] shrink-0 overflow-hidden bg-gradient-to-br from-[#efe3d2] via-[#dfc6a9] to-[#c6a27e]">
+        <Dialog.Backdrop className="fixed inset-0 z-40 bg-foreground/55 transition-opacity data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
+        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 flex max-h-[92dvh] w-[min(42rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 flex-col overflow-y-auto rounded-2xl bg-card shadow-2xl outline-none">
+          <div className="relative aspect-[16/8] shrink-0 overflow-hidden bg-gradient-to-br from-accent via-accent to-ring">
             {item.imageUrl ? (
               <Image
                 src={item.imageUrl}
@@ -122,7 +122,7 @@ function MenuItemDialogContent({
                 className="object-cover"
               />
             ) : (
-              <div className="flex h-full items-center justify-center text-[#714d34]">
+              <div className="flex h-full items-center justify-center text-primary">
                 <HugeiconsIcon icon={Coffee01Icon} size={76} aria-hidden="true" />
               </div>
             )}
@@ -132,7 +132,7 @@ function MenuItemDialogContent({
                   type="button"
                   variant="outline"
                   size="icon"
-                  className="absolute right-3 top-3 rounded-full bg-white/90"
+                  className="absolute right-3 top-3 rounded-full bg-card/90"
                   aria-label="Đóng chi tiết món"
                 />
               }
@@ -146,21 +146,21 @@ function MenuItemDialogContent({
             <div>
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <Dialog.Title className="text-2xl font-semibold text-[#3f2d22]">
+                  <Dialog.Title className="text-2xl font-semibold text-foreground">
                     {item.name}
                   </Dialog.Title>
-                  <p className="mt-1 font-semibold text-[#754c32]">
+                  <p className="mt-1 font-semibold text-primary">
                     {formatVND(item.price)}
                   </p>
                 </div>
                 {!item.isAvailable ? (
-                  <span className="rounded-full bg-stone-100 px-3 py-1 text-sm font-medium text-stone-600">
+                  <span className="rounded-full bg-muted px-3 py-1 text-sm font-medium text-muted-foreground">
                     Hết hàng
                   </span>
                 ) : null}
               </div>
               {item.description ? (
-                <Dialog.Description className="mt-3 text-sm leading-6 text-stone-600">
+                <Dialog.Description className="mt-3 text-sm leading-6 text-muted-foreground">
                   {item.description}
                 </Dialog.Description>
               ) : null}
@@ -168,13 +168,13 @@ function MenuItemDialogContent({
 
             {hasSizeOptions ? (
               <fieldset>
-                <legend className="mb-3 text-sm font-semibold text-[#3f2d22]">
-                  Kích cỡ <span className="font-normal text-stone-500">· Chọn 1</span>
+                <legend className="mb-3 text-sm font-semibold text-foreground">
+                  Kích cỡ <span className="font-normal text-muted-foreground">· Chọn 1</span>
                 </legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {sizeOptions.map((option) => (
                     <label
-                      className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#e9e0d2] px-4 py-3 has-[:checked]:border-[#754c32] has-[:checked]:bg-[#f8f4ed]"
+                      className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-background"
                       key={option.id}
                     >
                       <span className="flex items-center gap-3">
@@ -184,13 +184,13 @@ function MenuItemDialogContent({
                           value={option.id}
                           checked={selectedSizeId === option.id}
                           onChange={() => setSelectedSizeId(option.id)}
-                          className="accent-[#68452f]"
+                          className="accent-primary"
                         />
-                        <span className="text-sm font-medium text-stone-800">
+                        <span className="text-sm font-medium text-foreground">
                           {option.name}
                         </span>
                       </span>
-                      <span className="text-sm text-stone-600">
+                      <span className="text-sm text-muted-foreground">
                         {option.priceDelta > 0
                           ? `+${formatVND(option.priceDelta)}`
                           : "Không phụ thu"}
@@ -203,13 +203,13 @@ function MenuItemDialogContent({
 
             {toppingOptions.length > 0 ? (
               <fieldset>
-                <legend className="mb-3 text-sm font-semibold text-[#3f2d22]">
-                  Topping <span className="font-normal text-stone-500">· Tùy chọn</span>
+                <legend className="mb-3 text-sm font-semibold text-foreground">
+                  Topping <span className="font-normal text-muted-foreground">· Tùy chọn</span>
                 </legend>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {toppingOptions.map((option) => (
                     <label
-                      className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-[#e9e0d2] px-4 py-3 has-[:checked]:border-[#754c32] has-[:checked]:bg-[#f8f4ed]"
+                      className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-background"
                       key={option.id}
                     >
                       <span className="flex items-center gap-3">
@@ -217,13 +217,13 @@ function MenuItemDialogContent({
                           type="checkbox"
                           checked={selectedToppingIds.includes(option.id)}
                           onChange={() => toggleTopping(option)}
-                          className="size-4 accent-[#68452f]"
+                          className="size-4 accent-primary"
                         />
-                        <span className="text-sm font-medium text-stone-800">
+                        <span className="text-sm font-medium text-foreground">
                           {option.name}
                         </span>
                       </span>
-                      <span className="text-sm text-stone-600">
+                      <span className="text-sm text-muted-foreground">
                         {option.priceDelta > 0
                           ? `+${formatVND(option.priceDelta)}`
                           : "Miễn phí"}
@@ -234,10 +234,10 @@ function MenuItemDialogContent({
               </fieldset>
             ) : null}
 
-            <label className="grid gap-2 text-sm font-semibold text-[#3f2d22]">
+            <label className="grid gap-2 text-sm font-semibold text-foreground">
               Ghi chú cho món
               <textarea
-                className="min-h-20 resize-y rounded-xl border border-[#e9e0d2] bg-white px-3 py-2 font-normal text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-[#a78361]"
+                className="min-h-20 resize-y rounded-xl border border-border bg-card px-3 py-2 font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                 placeholder="Ví dụ: ít đá, ít ngọt..."
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
@@ -245,10 +245,10 @@ function MenuItemDialogContent({
               />
             </label>
 
-            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-[#e9e0d2] pt-5">
-              <div className="flex items-center rounded-full border border-[#e9e0d2]">
+            <div className="flex flex-wrap items-center justify-between gap-4 border-t border-border pt-5">
+              <div className="flex items-center rounded-full border border-border">
                 <button
-                  className="size-10 rounded-full text-lg text-stone-700 hover:bg-[#f8f4ed] disabled:opacity-40"
+                  className="size-10 rounded-full text-lg text-foreground hover:bg-background disabled:opacity-40"
                   type="button"
                   onClick={() => setQuantity((current) => Math.max(1, current - 1))}
                   disabled={quantity <= 1}
@@ -260,7 +260,7 @@ function MenuItemDialogContent({
                   {quantity}
                 </span>
                 <button
-                  className="size-10 rounded-full text-lg text-stone-700 hover:bg-[#f8f4ed]"
+                  className="size-10 rounded-full text-lg text-foreground hover:bg-background"
                   type="button"
                   onClick={() => setQuantity((current) => Math.min(99, current + 1))}
                   disabled={quantity >= 99}
@@ -270,11 +270,11 @@ function MenuItemDialogContent({
                 </button>
               </div>
               <div className="ml-auto text-right">
-                <p className="text-xs text-stone-500">Tạm tính</p>
-                <p className="font-semibold text-[#513625]">{formatVND(totalPrice)}</p>
+                <p className="text-xs text-muted-foreground">Tạm tính</p>
+                <p className="font-semibold text-primary">{formatVND(totalPrice)}</p>
               </div>
               <Button
-                className="w-full bg-[#68452f] text-white hover:bg-[#513625] sm:w-auto"
+                className="w-full bg-primary text-primary-foreground hover:bg-primary sm:w-auto"
                 type="button"
                 onClick={handleAdd}
                 disabled={

@@ -22,10 +22,10 @@ export default async function AdminLayout({
   return (
     <Suspense
       fallback={
-        <div className="flex min-h-screen flex-1 flex-col bg-[#fbf8f2]">
-          <div className="h-16 border-b border-[#e9e0d2] bg-white" />
+        <div className="flex min-h-screen flex-1 flex-col bg-background">
+          <div className="h-16 border-b border-border bg-card" />
           <main className="flex-1 p-6">
-            <div className="h-64 animate-pulse rounded-xl bg-[#e9e0d2]" />
+            <div className="h-64 animate-pulse rounded-xl bg-border" />
           </main>
         </div>
       }
@@ -45,17 +45,17 @@ async function AdminLayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen flex-1 flex-col bg-[#fbf8f2]">
-      <header className="flex min-h-16 items-center justify-between gap-3 border-b border-[#e9e0d2] bg-white px-4 sm:px-6">
-        <Link className="hidden font-bold text-[#513625] sm:inline" href="/admin">
+    <div className="flex min-h-screen flex-1 flex-col bg-background">
+      <header className="flex min-h-16 items-center justify-between gap-3 border-b border-border bg-card px-4 sm:px-6">
+        <Link className="hidden font-bold text-primary sm:inline" href="/admin">
           {SITE_INFO.name} · Quản trị
         </Link>
         <div className="ml-auto flex items-center gap-3">
           <div className="text-right">
-            <p className="max-w-40 truncate text-sm font-semibold text-[#3f2d22]">
+            <p className="max-w-40 truncate text-sm font-semibold text-foreground">
               {session.user.name || session.user.email}
             </p>
-            <p className="text-xs text-stone-500">
+            <p className="text-xs text-muted-foreground">
               {roleLabels[session.user.role]}
             </p>
           </div>

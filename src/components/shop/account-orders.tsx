@@ -51,7 +51,7 @@ const statusLabels: Record<AccountOrder["status"], string> = {
 };
 
 const statusStyles: Record<AccountOrder["status"], string> = {
-  PENDING: "bg-amber-100 text-amber-900",
+  PENDING: "bg-accent text-primary",
   CONFIRMED: "bg-sky-100 text-sky-900",
   PREPARING: "bg-indigo-100 text-indigo-900",
   READY: "bg-emerald-100 text-emerald-900",
@@ -145,10 +145,10 @@ export function AccountOrders() {
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#805a3b]">
+      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
         Tài khoản
       </p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#3f2d22]">
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
         Đơn hàng của tôi
       </h1>
 
@@ -156,7 +156,7 @@ export function AccountOrders() {
         <div className="mt-8 grid gap-4" aria-label="Đang tải đơn hàng">
           {Array.from({ length: 3 }, (_, index) => (
             <div
-              className="h-28 animate-pulse rounded-2xl bg-[#e9e0d2]"
+              className="h-28 animate-pulse rounded-2xl bg-border"
               key={index}
             />
           ))}
@@ -174,15 +174,15 @@ export function AccountOrders() {
           </Button>
         </div>
       ) : orders.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-[#d6c5b2] bg-[#fbf8f2] px-6 py-14 text-center">
-          <h2 className="text-xl font-semibold text-[#3f2d22]">
+        <div className="mt-8 rounded-2xl border border-dashed border-border bg-background px-6 py-14 text-center">
+          <h2 className="text-xl font-semibold text-foreground">
             Bạn chưa có đơn nào
           </h2>
-          <p className="mt-2 text-stone-600">
+          <p className="mt-2 text-muted-foreground">
             Những đơn hàng bạn đặt sẽ hiển thị tại đây.
           </p>
           <Link
-            className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-[#68452f] px-5 text-sm font-semibold text-white hover:bg-[#513625]"
+            className="mt-5 inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary"
             href="/menu"
           >
             Xem menu
@@ -195,7 +195,7 @@ export function AccountOrders() {
               const expanded = expandedCode === order.code;
               return (
                 <article
-                  className="overflow-hidden rounded-2xl border border-[#e9e0d2] bg-white"
+                  className="overflow-hidden rounded-2xl border border-border bg-card"
                   key={order.code}
                 >
                   <button
@@ -207,10 +207,10 @@ export function AccountOrders() {
                     }
                   >
                     <span>
-                      <span className="block font-semibold text-[#513625]">
+                      <span className="block font-semibold text-primary">
                         {order.code}
                       </span>
-                      <span className="mt-1 block text-sm text-stone-600">
+                      <span className="mt-1 block text-sm text-muted-foreground">
                         {new Date(order.createdAt).toLocaleString("vi-VN", {
                           dateStyle: "medium",
                           timeStyle: "short",
@@ -222,13 +222,13 @@ export function AccountOrders() {
                     >
                       {statusLabels[order.status]}
                     </span>
-                    <span className="font-semibold text-[#3f2d22]">
+                    <span className="font-semibold text-foreground">
                       {formatVND(order.total)}
                     </span>
                   </button>
                   {expanded ? (
-                    <div className="border-t border-[#eee6da] bg-[#fffdf9] px-5 py-4">
-                      <h2 className="font-semibold text-[#3f2d22]">
+                    <div className="border-t border-muted bg-card px-5 py-4">
+                      <h2 className="font-semibold text-foreground">
                         Chi tiết đơn hàng
                       </h2>
                       <ul className="mt-3 grid gap-3">
@@ -238,11 +238,11 @@ export function AccountOrders() {
                             key={`${item.name}-${index}`}
                           >
                             <span>
-                              <span className="font-medium text-stone-800">
+                              <span className="font-medium text-foreground">
                                 {item.name} × {item.quantity}
                               </span>
                               {optionNames(item.options).length > 0 ? (
-                                <span className="mt-1 block text-stone-600">
+                                <span className="mt-1 block text-muted-foreground">
                                   {optionNames(item.options).join(", ")}
                                 </span>
                               ) : null}
@@ -250,7 +250,7 @@ export function AccountOrders() {
                           </li>
                         ))}
                       </ul>
-                      <div className="mt-4 border-t border-[#eee6da] pt-3 text-sm text-stone-600">
+                      <div className="mt-4 border-t border-muted pt-3 text-sm text-muted-foreground">
                         <p>
                           Hình thức:{" "}
                           {order.type === "DELIVERY" ? "Giao hàng" : "Đến lấy"}
@@ -262,7 +262,7 @@ export function AccountOrders() {
                           </p>
                         ) : null}
                         <Link
-                          className="mt-3 inline-block font-medium text-[#68452f] underline underline-offset-4"
+                          className="mt-3 inline-block font-medium text-primary underline underline-offset-4"
                           href="/track"
                         >
                           Tra cứu đơn hàng
@@ -286,7 +286,7 @@ export function AccountOrders() {
             >
               Trang trước
             </Button>
-            <span className="text-sm text-stone-600">
+            <span className="text-sm text-muted-foreground">
               Trang {page} / {Math.max(1, totalPages)}
             </span>
             <Button

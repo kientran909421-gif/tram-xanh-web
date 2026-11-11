@@ -27,7 +27,7 @@ export function MenuCard({ item, onClick }: MenuCardProps) {
         />
       ) : (
         <div
-          className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-[#efe3d2] via-[#dfc6a9] to-[#c6a27e] text-[#714d34]"
+          className="flex aspect-[4/3] items-center justify-center bg-gradient-to-br from-accent via-accent to-ring text-primary"
           role="img"
           aria-label={`Ảnh minh họa ${item.name}`}
         >
@@ -36,19 +36,19 @@ export function MenuCard({ item, onClick }: MenuCardProps) {
       )}
       <div className="flex min-h-32 flex-col p-4">
         <div className="flex items-start justify-between gap-3">
-          <h3 className="font-semibold text-[#3f2d22]">{item.name}</h3>
+          <h3 className="font-semibold text-foreground">{item.name}</h3>
           {!item.isAvailable ? (
-            <span className="shrink-0 rounded-full bg-stone-100 px-2.5 py-1 text-xs font-medium text-stone-600">
+            <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
               Hết hàng
             </span>
           ) : null}
         </div>
         {item.description ? (
-          <p className="mt-2 line-clamp-2 text-sm leading-5 text-stone-600">
+          <p className="mt-2 line-clamp-2 text-sm leading-5 text-muted-foreground">
             {item.description}
           </p>
         ) : null}
-        <p className="mt-auto pt-4 font-semibold text-[#754c32]">
+        <p className="mt-auto pt-4 font-semibold text-primary">
           {formatVND(item.price)}
         </p>
       </div>
@@ -56,7 +56,7 @@ export function MenuCard({ item, onClick }: MenuCardProps) {
   );
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-[#e9e0d2] bg-white shadow-sm">
+    <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
       {onClick ? (
         <button
           className="block w-full cursor-pointer text-left"

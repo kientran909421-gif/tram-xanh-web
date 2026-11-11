@@ -10,7 +10,7 @@ export default function ShopLayout({
     <CartProvider>
       <Suspense
         fallback={
-          <header className="h-[65px] border-b border-[#e9e0d2] bg-[#fbf8f2]" />
+          <header className="h-[65px] border-b border-border bg-background" />
         }
       >
         <Header />

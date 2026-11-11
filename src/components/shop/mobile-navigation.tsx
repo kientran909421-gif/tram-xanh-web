@@ -33,10 +33,10 @@ export function MobileNavigation() {
         <HugeiconsIcon icon={Menu02Icon} size={20} aria-hidden="true" />
       </Dialog.Trigger>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-40 bg-stone-950/45 transition-opacity data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
-        <Dialog.Popup className="fixed inset-y-0 right-0 z-50 flex w-[min(22rem,85vw)] flex-col gap-8 bg-[#fbf8f2] p-6 shadow-2xl transition-transform data-[starting-style]:translate-x-full data-[ending-style]:translate-x-full">
+        <Dialog.Backdrop className="fixed inset-0 z-40 bg-foreground/45 transition-opacity data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
+        <Dialog.Popup className="fixed inset-y-0 right-0 z-50 flex w-[min(22rem,85vw)] flex-col gap-8 bg-background p-6 shadow-2xl transition-transform data-[starting-style]:translate-x-full data-[ending-style]:translate-x-full">
           <div className="flex items-center justify-between">
-            <Dialog.Title className="text-lg font-semibold text-stone-900">
+            <Dialog.Title className="text-lg font-semibold text-foreground">
               Điều hướng
             </Dialog.Title>
             <Dialog.Close
@@ -59,7 +59,7 @@ export function MobileNavigation() {
               {navigation.map((item) => (
                 <li key={item.href}>
                   <Link
-                    className="block rounded-lg px-3 py-3 font-medium text-stone-800 hover:bg-amber-100"
+                    className="block rounded-lg px-3 py-3 font-medium text-foreground hover:bg-accent"
                     href={item.href}
                     onClick={() => setOpen(false)}
                   >

@@ -85,22 +85,22 @@ export function CartPage() {
 
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#805a3b]">
+      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
         Đơn hàng của bạn
       </p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#3f2d22]">
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
         Giỏ hàng
       </h1>
       {hasHydrated && items.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-[#d6c5b2] bg-[#fbf8f2] px-6 py-14 text-center">
-          <h2 className="text-xl font-semibold text-[#3f2d22]">
+        <div className="mt-8 rounded-2xl border border-dashed border-border bg-background px-6 py-14 text-center">
+          <h2 className="text-xl font-semibold text-foreground">
             Giỏ hàng của bạn đang trống
           </h2>
-          <p className="mt-2 text-stone-600">
+          <p className="mt-2 text-muted-foreground">
             Khám phá thực đơn và chọn món yêu thích nhé.
           </p>
           <Link
-            className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-[#68452f] px-6 text-sm font-semibold text-white hover:bg-[#513625]"
+            className="mt-5 inline-flex h-11 items-center justify-center rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground hover:bg-primary"
             href="/menu"
           >
             Xem menu
@@ -108,17 +108,17 @@ export function CartPage() {
         </div>
       ) : (
         <div className="mt-8 grid items-start gap-8 lg:grid-cols-[1fr_23rem]">
-          <section className="rounded-2xl border border-[#e9e0d2] bg-white px-5 sm:px-7">
+          <section className="rounded-2xl border border-border bg-card px-5 sm:px-7">
             <h2 className="sr-only">Các món trong giỏ hàng</h2>
             <CartItems />
           </section>
-          <aside className="grid gap-5 rounded-2xl border border-[#e9e0d2] bg-[#fbf8f2] p-5 sm:p-6">
-            <h2 className="text-lg font-semibold text-[#3f2d22]">
+          <aside className="grid gap-5 rounded-2xl border border-border bg-background p-5 sm:p-6">
+            <h2 className="text-lg font-semibold text-foreground">
               Tóm tắt đơn hàng
             </h2>
             <form className="grid gap-3" onSubmit={validatePromotion}>
               <label
-                className="text-sm font-medium text-stone-700"
+                className="text-sm font-medium text-foreground"
                 htmlFor="promotion-code"
               >
                 Mã giảm giá
@@ -126,7 +126,7 @@ export function CartPage() {
               <div className="flex gap-2">
                 <Input
                   id="promotion-code"
-                  className="min-w-0 border-[#e2d5c4] bg-white uppercase"
+                  className="min-w-0 border-border bg-card uppercase"
                   value={code}
                   onChange={(event) => {
                     setCode(event.target.value);
@@ -142,7 +142,7 @@ export function CartPage() {
                 <Button
                   type="submit"
                   variant="outline"
-                  className="border-[#9d7959] text-[#513625]"
+                  className="border-muted-foreground text-primary"
                   disabled={validating || !hasHydrated || items.length === 0}
                 >
                   {validating ? "Đang kiểm tra..." : "Áp dụng"}
@@ -159,27 +159,27 @@ export function CartPage() {
                 </p>
               ) : null}
               {promotion && validatedSubtotal !== subtotal ? (
-                <p className="text-sm text-amber-900" role="status">
+                <p className="text-sm text-primary" role="status">
                   Giỏ hàng đã thay đổi. Hãy áp dụng lại mã để cập nhật giảm giá.
                 </p>
               ) : null}
             </form>
-            <div className="grid gap-3 border-t border-[#e2d5c4] pt-4 text-sm">
+            <div className="grid gap-3 border-t border-border pt-4 text-sm">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-stone-600">Tạm tính</span>
-                <span className="font-medium text-stone-800">
+                <span className="text-muted-foreground">Tạm tính</span>
+                <span className="font-medium text-foreground">
                   {hasHydrated ? formatVND(subtotal) : "—"}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-4">
-                <span className="text-stone-600">Giảm giá</span>
+                <span className="text-muted-foreground">Giảm giá</span>
                 <span className="font-medium text-green-800">
                   {formatVND(currentDiscount)}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-4 border-t border-[#e2d5c4] pt-3 text-base font-semibold">
-                <span className="text-[#3f2d22]">Tổng cộng</span>
-                <span className="text-[#513625]">
+              <div className="flex items-center justify-between gap-4 border-t border-border pt-3 text-base font-semibold">
+                <span className="text-foreground">Tổng cộng</span>
+                <span className="text-primary">
                   {hasHydrated
                     ? formatVND(Math.max(0, subtotal - currentDiscount))
                     : "—"}
@@ -187,7 +187,7 @@ export function CartPage() {
               </div>
             </div>
             <Link
-              className={`inline-flex h-11 items-center justify-center rounded-full bg-[#68452f] px-5 text-sm font-semibold text-white hover:bg-[#513625] ${
+              className={`inline-flex h-11 items-center justify-center rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground hover:bg-primary ${
                 !hasHydrated || items.length === 0
                   ? "pointer-events-none opacity-50"
                   : ""
@@ -199,7 +199,7 @@ export function CartPage() {
               Tiếp tục đặt hàng
             </Link>
             <Link
-              className="text-center text-sm font-medium text-[#68452f] underline underline-offset-4"
+              className="text-center text-sm font-medium text-primary underline underline-offset-4"
               href="/menu"
             >
               Tiếp tục chọn món

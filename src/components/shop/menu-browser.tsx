@@ -172,15 +172,15 @@ export function MenuBrowser() {
 
   return (
     <>
-      <section className="bg-[#fbf8f2]">
+      <section className="bg-background">
         <div className="mx-auto w-full max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#805a3b]">
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
             Thực đơn
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#3f2d22] sm:text-4xl">
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             Chọn món bạn yêu thích
           </h1>
-          <p className="mt-3 max-w-2xl text-stone-600">
+          <p className="mt-3 max-w-2xl text-muted-foreground">
             Cà phê, trà, sinh tố và bánh được chuẩn bị mỗi ngày tại quán.
           </p>
         </div>
@@ -203,8 +203,8 @@ export function MenuBrowser() {
               <button
                 className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   !categorySlug
-                    ? "bg-[#68452f] text-white"
-                    : "bg-[#f3ede4] text-[#513625] hover:bg-[#e9e0d2]"
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted text-primary hover:bg-border"
                 }`}
                 type="button"
                 role="tab"
@@ -217,8 +217,8 @@ export function MenuBrowser() {
                 <button
                   className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                     categorySlug === category.slug
-                      ? "bg-[#68452f] text-white"
-                      : "bg-[#f3ede4] text-[#513625] hover:bg-[#e9e0d2]"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted text-primary hover:bg-border"
                   }`}
                   key={category.id}
                   type="button"
@@ -231,7 +231,7 @@ export function MenuBrowser() {
               ))}
             </div>
             {categorySlug && !selectedCategory && categories.length > 0 ? (
-              <p className="mt-2 text-sm text-amber-900">
+              <p className="mt-2 text-sm text-primary">
                 Danh mục “{categorySlug}” không tồn tại.{" "}
                 <button
                   className="underline underline-offset-2"
@@ -246,7 +246,7 @@ export function MenuBrowser() {
 
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <Input
-              className="max-w-xl border-[#e2d5c4] bg-white"
+              className="max-w-xl border-border bg-card"
               type="search"
               placeholder="Tìm món theo tên..."
               aria-label="Tìm món theo tên"
@@ -259,9 +259,9 @@ export function MenuBrowser() {
                 })
               }
             />
-            <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-medium text-stone-700">
+            <label className="inline-flex cursor-pointer items-center gap-3 text-sm font-medium text-foreground">
               <input
-                className="size-4 accent-[#68452f]"
+                className="size-4 accent-primary"
                 type="checkbox"
                 checked={availableOnly}
                 onChange={(event) =>
@@ -293,23 +293,23 @@ export function MenuBrowser() {
             >
               {Array.from({ length: 8 }, (_, index) => (
                 <div
-                  className="overflow-hidden rounded-2xl border border-[#e9e0d2] bg-white"
+                  className="overflow-hidden rounded-2xl border border-border bg-card"
                   key={index}
                 >
-                  <div className="aspect-[4/3] animate-pulse bg-[#e9e0d2]" />
+                  <div className="aspect-[4/3] animate-pulse bg-border" />
                   <div className="grid gap-3 p-4">
-                    <div className="h-4 animate-pulse rounded bg-[#eee6da]" />
-                    <div className="h-4 w-2/3 animate-pulse rounded bg-[#eee6da]" />
+                    <div className="h-4 animate-pulse rounded bg-muted" />
+                    <div className="h-4 w-2/3 animate-pulse rounded bg-muted" />
                   </div>
                 </div>
               ))}
             </div>
           ) : items.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[#d6c5b2] bg-[#fbf8f2] px-6 py-14 text-center">
-              <h2 className="text-lg font-semibold text-[#3f2d22]">
+            <div className="rounded-xl border border-dashed border-border bg-background px-6 py-14 text-center">
+              <h2 className="text-lg font-semibold text-foreground">
                 Không tìm thấy món phù hợp
               </h2>
-              <p className="mt-2 text-sm text-stone-600">
+              <p className="mt-2 text-sm text-muted-foreground">
                 Hãy thử đổi danh mục hoặc từ khóa tìm kiếm.
               </p>
             </div>

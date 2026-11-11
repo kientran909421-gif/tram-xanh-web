@@ -25,11 +25,11 @@ export function TrackForm() {
 
   return (
     <form
-      className="grid gap-5 rounded-2xl border border-[#e9e0d2] bg-white p-5 sm:p-7"
+      className="grid gap-5 rounded-2xl border border-border bg-card p-5 sm:p-7"
       onSubmit={form.handleSubmit(onSubmit)}
       noValidate
     >
-      <label className="grid gap-2 text-sm font-medium text-stone-700">
+      <label className="grid gap-2 text-sm font-medium text-foreground">
         Mã đơn hàng
         <Input
           placeholder="Ví dụ: CF-261111-ABCD"
@@ -42,7 +42,7 @@ export function TrackForm() {
           </span>
         ) : null}
       </label>
-      <label className="grid gap-2 text-sm font-medium text-stone-700">
+      <label className="grid gap-2 text-sm font-medium text-foreground">
         Số điện thoại đặt hàng
         <Input
           type="tel"
@@ -58,7 +58,7 @@ export function TrackForm() {
         ) : null}
       </label>
       <Button
-        className="bg-[#68452f] text-white hover:bg-[#513625]"
+        className="bg-primary text-primary-foreground hover:bg-primary"
         type="submit"
         disabled={form.formState.isSubmitting}
       >

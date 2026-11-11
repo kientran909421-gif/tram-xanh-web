@@ -146,36 +146,36 @@ export function ReservationForm({
   if (successCode) {
     return (
       <main className="mx-auto flex w-full max-w-2xl flex-1 items-center px-4 py-12 sm:px-6">
-        <Card className="w-full border-[#e9e0d2] bg-[#fffdf9]">
+        <Card className="w-full border-border bg-card">
           <CardHeader className="text-center">
             <div className="mx-auto grid size-14 place-items-center rounded-full bg-green-100 text-2xl text-green-700">
               ✓
             </div>
-            <CardTitle className="text-2xl text-[#3f2d22]">
+            <CardTitle className="text-2xl text-foreground">
               Đã nhận yêu cầu đặt bàn
             </CardTitle>
           </CardHeader>
           <CardContent className="text-center">
-            <p className="text-sm text-stone-600">
+            <p className="text-sm text-muted-foreground">
               Quán sẽ xác nhận đặt bàn của bạn. Vui lòng lưu mã này.
             </p>
-            <p className="mt-5 text-3xl font-bold tracking-wider text-[#68452f]">
+            <p className="mt-5 text-3xl font-bold tracking-wider text-primary">
               {successCode}
             </p>
-            <p className="mt-3 text-sm text-stone-600">
+            <p className="mt-3 text-sm text-muted-foreground">
               {formatDate(date)} lúc {selectedTime} · {guests} khách
             </p>
             <Button className="mt-5" onClick={copyCode} type="button">
               Sao chép mã
             </Button>
             {copyMessage && (
-              <p aria-live="polite" className="mt-2 text-sm text-stone-600">
+              <p aria-live="polite" className="mt-2 text-sm text-muted-foreground">
                 {copyMessage}
               </p>
             )}
             <div>
               <Link
-                className="mt-4 inline-block text-sm font-medium text-[#68452f] underline underline-offset-4"
+                className="mt-4 inline-block text-sm font-medium text-primary underline underline-offset-4"
                 href="/"
               >
                 Về trang chủ
@@ -190,13 +190,13 @@ export function ReservationForm({
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10 sm:px-6 sm:py-14">
       <div className="mb-8">
-        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-[#9a6b45]">
+        <p className="text-sm font-semibold uppercase tracking-[0.2em] text-primary">
           Trải nghiệm tại quán
         </p>
-        <h1 className="mt-2 text-3xl font-bold text-[#3f2d22] sm:text-4xl">
+        <h1 className="mt-2 text-3xl font-bold text-foreground sm:text-4xl">
           Đặt bàn
         </h1>
-        <p className="mt-2 text-stone-600">
+        <p className="mt-2 text-muted-foreground">
           Chọn ngày, khung giờ và để chúng tôi chuẩn bị chỗ ngồi cho bạn.
         </p>
       </div>
@@ -206,9 +206,9 @@ export function ReservationForm({
         onSubmit={form.handleSubmit(onSubmit)}
       >
         <div className="space-y-6">
-          <Card className="border-[#e9e0d2] bg-[#fffdf9]">
+          <Card className="border-border bg-card">
             <CardHeader>
-              <CardTitle className="text-lg text-[#3f2d22]">
+              <CardTitle className="text-lg text-foreground">
                 1. Chọn ngày và số khách
               </CardTitle>
             </CardHeader>
@@ -219,10 +219,10 @@ export function ReservationForm({
                 onSelect={changeDate}
                 selected={date}
               />
-              <div className="flex items-center justify-between rounded-xl bg-[#f7f2e9] p-4">
+              <div className="flex items-center justify-between rounded-xl bg-muted p-4">
                 <div>
-                  <p className="font-medium text-[#3f2d22]">Số khách</p>
-                  <p className="text-sm text-stone-500">Tối đa 20 khách</p>
+                  <p className="font-medium text-foreground">Số khách</p>
+                  <p className="text-sm text-muted-foreground">Tối đa 20 khách</p>
                 </div>
                 <div className="flex items-center gap-3">
                   <Button
@@ -253,9 +253,9 @@ export function ReservationForm({
             </CardContent>
           </Card>
 
-          <Card className="border-[#e9e0d2] bg-[#fffdf9]">
+          <Card className="border-border bg-card">
             <CardHeader>
-              <CardTitle className="text-lg text-[#3f2d22]">
+              <CardTitle className="text-lg text-foreground">
                 2. Chọn khung giờ
               </CardTitle>
             </CardHeader>
@@ -264,7 +264,7 @@ export function ReservationForm({
                 <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                   {Array.from({ length: 12 }, (_, index) => (
                     <div
-                      className="h-12 animate-pulse rounded-lg bg-[#e9e0d2]"
+                      className="h-12 animate-pulse rounded-lg bg-border"
                       key={index}
                     />
                   ))}
@@ -289,10 +289,10 @@ export function ReservationForm({
                         aria-pressed={selectedTime === slot.time}
                         className={`min-h-12 rounded-lg border px-2 py-2 text-sm transition-colors ${
                           selectedTime === slot.time
-                            ? "border-[#68452f] bg-[#68452f] text-white"
+                            ? "border-primary bg-primary text-primary-foreground"
                             : slot.available
-                              ? "border-[#e9e0d2] bg-white text-[#3f2d22] hover:border-[#9a6b45]"
-                              : "cursor-not-allowed border-stone-200 bg-stone-100 text-stone-400"
+                              ? "border-border bg-card text-foreground hover:border-primary"
+                              : "cursor-not-allowed border-border bg-muted text-muted-foreground"
                         }`}
                         disabled={!slot.available}
                         key={slot.time}
@@ -313,7 +313,7 @@ export function ReservationForm({
                       </button>
                     ))}
                   </div>
-                  <p className="mt-3 text-xs text-stone-500">
+                  <p className="mt-3 text-xs text-muted-foreground">
                     Chỉ nhận đặt trước tối thiểu{" "}
                     {RESERVATION_MIN_ADVANCE_MINUTES} phút.
                   </p>
@@ -330,14 +330,14 @@ export function ReservationForm({
           </Card>
         </div>
 
-        <Card className="h-fit border-[#e9e0d2] bg-[#fffdf9]">
+        <Card className="h-fit border-border bg-card">
           <CardHeader>
-            <CardTitle className="text-lg text-[#3f2d22]">
+            <CardTitle className="text-lg text-foreground">
               3. Thông tin liên hệ
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <label className="block space-y-1.5 text-sm font-medium text-[#3f2d22]">
+            <label className="block space-y-1.5 text-sm font-medium text-foreground">
               Họ tên
               <Input
                 aria-invalid={Boolean(form.formState.errors.name)}
@@ -346,7 +346,7 @@ export function ReservationForm({
               />
               <FieldError message={form.formState.errors.name?.message} />
             </label>
-            <label className="block space-y-1.5 text-sm font-medium text-[#3f2d22]">
+            <label className="block space-y-1.5 text-sm font-medium text-foreground">
               Số điện thoại
               <Input
                 aria-invalid={Boolean(form.formState.errors.phone)}
@@ -356,7 +356,7 @@ export function ReservationForm({
               />
               <FieldError message={form.formState.errors.phone?.message} />
             </label>
-            <label className="block space-y-1.5 text-sm font-medium text-[#3f2d22]">
+            <label className="block space-y-1.5 text-sm font-medium text-foreground">
               Ghi chú (không bắt buộc)
               <textarea
                 className="min-h-24 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50"
@@ -377,7 +377,7 @@ export function ReservationForm({
             >
               {form.formState.isSubmitting ? "Đang gửi..." : "Gửi yêu cầu đặt bàn"}
             </Button>
-            <p className="text-center text-xs text-stone-500">
+            <p className="text-center text-xs text-muted-foreground">
               Quán sẽ liên hệ xác nhận đặt bàn của bạn.
             </p>
           </CardContent>

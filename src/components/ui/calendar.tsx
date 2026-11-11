@@ -23,23 +23,23 @@ export function Calendar({
     monthKey(visibleMonth) < monthKey(startOfMonth(maxDate));
 
   return (
-    <div className="rounded-xl border border-[#e9e0d2] bg-white p-3">
+    <div className="rounded-xl border border-border bg-card p-3">
       <div className="mb-3 flex items-center justify-between">
         <button
           aria-label="Tháng trước"
-          className="grid size-9 place-items-center rounded-lg text-lg text-[#68452f] hover:bg-[#f5efe5] disabled:opacity-30"
+          className="grid size-9 place-items-center rounded-lg text-lg text-primary hover:bg-muted disabled:opacity-30"
           disabled={!canGoBack}
           onClick={() => setVisibleMonth(addMonths(visibleMonth, -1))}
           type="button"
         >
           ‹
         </button>
-        <p aria-live="polite" className="font-semibold text-[#3f2d22]">
+        <p aria-live="polite" className="font-semibold text-foreground">
           {selectedLabel}
         </p>
         <button
           aria-label="Tháng sau"
-          className="grid size-9 place-items-center rounded-lg text-lg text-[#68452f] hover:bg-[#f5efe5] disabled:opacity-30"
+          className="grid size-9 place-items-center rounded-lg text-lg text-primary hover:bg-muted disabled:opacity-30"
           disabled={!canGoForward}
           onClick={() => setVisibleMonth(addMonths(visibleMonth, 1))}
           type="button"
@@ -47,7 +47,7 @@ export function Calendar({
           ›
         </button>
       </div>
-      <div className="grid grid-cols-7 gap-1 text-center text-xs text-stone-500">
+      <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground">
         {WEEKDAYS.map((day) => (
           <div className="py-2 font-medium" key={day}>
             {day}
@@ -61,10 +61,10 @@ export function Calendar({
           return (
             <button
               aria-pressed={isSelected}
-              className={`aspect-square rounded-lg text-sm transition-colors disabled:cursor-not-allowed disabled:text-stone-300 ${
+              className={`aspect-square rounded-lg text-sm transition-colors disabled:cursor-not-allowed disabled:text-muted-foreground ${
                 isSelected
-                  ? "bg-[#68452f] font-semibold text-white"
-                  : "text-[#3f2d22] hover:bg-[#f5efe5]"
+                  ? "bg-primary font-semibold text-primary-foreground"
+                  : "text-foreground hover:bg-muted"
               }`}
               disabled={disabled}
               key={date}

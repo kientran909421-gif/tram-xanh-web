@@ -38,14 +38,14 @@ export function CategoryManager() {
         key: "name",
         header: "Tên danh mục",
         render: (category) => (
-          <span className="font-medium text-[#3f2d22]">{category.name}</span>
+          <span className="font-medium text-foreground">{category.name}</span>
         ),
       },
       {
         key: "slug",
         header: "Slug",
         render: (category) => (
-          <code className="rounded bg-[#f7f2e9] px-2 py-1 text-xs">
+          <code className="rounded bg-muted px-2 py-1 text-xs">
             {category.slug}
           </code>
         ),
@@ -191,9 +191,9 @@ export function CategoryManager() {
       <div className="mx-auto max-w-7xl">
         <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
           <div>
-            <p className="text-sm font-medium text-[#9a6b45]">Quản lý nội dung</p>
-            <h1 className="mt-1 text-3xl font-bold text-[#3f2d22]">Danh mục</h1>
-            <p className="mt-2 text-sm text-stone-600">
+            <p className="text-sm font-medium text-primary">Quản lý nội dung</p>
+            <h1 className="mt-1 text-3xl font-bold text-foreground">Danh mục</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
               Sắp xếp và quản lý các nhóm món trong thực đơn.
             </p>
           </div>
@@ -292,16 +292,16 @@ function CategoryDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-stone-950/45 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
-        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-[min(30rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#e9e0d2] bg-[#fffdf9] p-6 shadow-2xl">
-          <Dialog.Title className="text-xl font-semibold text-[#3f2d22]">
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-foreground/45 data-[starting-style]:opacity-0 data-[ending-style]:opacity-0" />
+        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-[min(30rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-6 shadow-2xl">
+          <Dialog.Title className="text-xl font-semibold text-foreground">
             {category ? "Chỉnh sửa danh mục" : "Thêm danh mục"}
           </Dialog.Title>
-          <Dialog.Description className="mt-1 text-sm text-stone-600">
+          <Dialog.Description className="mt-1 text-sm text-muted-foreground">
             Slug sẽ tự tạo theo tên nếu để trống.
           </Dialog.Description>
           <form className="mt-5 grid gap-4" onSubmit={submit}>
-            <label className="grid gap-1.5 text-sm font-medium text-[#3f2d22]">
+            <label className="grid gap-1.5 text-sm font-medium text-foreground">
               Tên danh mục
               <Input
                 autoFocus
@@ -311,7 +311,7 @@ function CategoryDialog({
                 value={name}
               />
             </label>
-            <label className="grid gap-1.5 text-sm font-medium text-[#3f2d22]">
+            <label className="grid gap-1.5 text-sm font-medium text-foreground">
               Slug
               <Input
                 onChange={(event) => setSlug(event.target.value)}
@@ -319,7 +319,7 @@ function CategoryDialog({
                 value={slug}
               />
             </label>
-            <label className="grid gap-1.5 text-sm font-medium text-[#3f2d22]">
+            <label className="grid gap-1.5 text-sm font-medium text-foreground">
               Thứ tự hiển thị
               <Input
                 onChange={(event) => setSortOrder(event.target.value)}
@@ -368,12 +368,12 @@ function ConfirmDeleteDialog({
       }}
     >
       <Dialog.Portal>
-        <Dialog.Backdrop className="fixed inset-0 z-50 bg-stone-950/45" />
-        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-[#e9e0d2] bg-[#fffdf9] p-6 shadow-2xl">
-          <Dialog.Title className="text-lg font-semibold text-[#3f2d22]">
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-foreground/45" />
+        <Dialog.Popup className="fixed left-1/2 top-1/2 z-50 w-[min(28rem,calc(100vw-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-2xl border border-border bg-card p-6 shadow-2xl">
+          <Dialog.Title className="text-lg font-semibold text-foreground">
             Xóa danh mục?
           </Dialog.Title>
-          <Dialog.Description className="mt-2 text-sm text-stone-600">
+          <Dialog.Description className="mt-2 text-sm text-muted-foreground">
             Bạn có chắc muốn xóa “{category?.name}”? Danh mục đang có món sẽ
             không thể xóa.
           </Dialog.Description>

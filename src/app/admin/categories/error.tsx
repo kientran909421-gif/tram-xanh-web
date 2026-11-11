@@ -8,12 +8,12 @@ export default function CategoriesError({
 }) {
   return (
     <main className="flex flex-1 flex-col items-center justify-center px-4 py-16 text-center">
-      <h1 className="text-2xl font-semibold text-[#3f2d22]">
+      <h1 className="text-2xl font-semibold text-foreground">
         Không thể tải danh mục
       </h1>
-      <p className="mt-2 text-sm text-stone-600">Vui lòng thử lại sau.</p>
+      <p className="mt-2 text-sm text-muted-foreground">Vui lòng thử lại sau.</p>
       <button
-        className="mt-5 rounded-full bg-[#68452f] px-5 py-2.5 text-sm font-semibold text-white"
+        className="mt-5 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
         onClick={reset}
       >
         Thử lại

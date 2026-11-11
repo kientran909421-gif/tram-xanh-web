@@ -173,7 +173,7 @@ export function CheckoutForm({
   if (!hasHydrated || items.length === 0) {
     return (
       <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-12 sm:px-6 lg:px-8">
-        <p className="text-center text-stone-600" role="status">
+        <p className="text-center text-muted-foreground" role="status">
           {hasHydrated ? "Đang chuyển đến thực đơn..." : "Đang tải giỏ hàng..."}
         </p>
       </main>
@@ -182,10 +182,10 @@ export function CheckoutForm({
 
   return (
     <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-10 sm:px-6 lg:px-8">
-      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-[#805a3b]">
+      <p className="text-sm font-semibold uppercase tracking-[0.18em] text-primary">
         Hoàn tất đơn hàng
       </p>
-      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-[#3f2d22]">
+      <h1 className="mt-2 text-3xl font-semibold tracking-tight text-foreground">
         Thanh toán
       </h1>
       <form
@@ -194,29 +194,29 @@ export function CheckoutForm({
         noValidate
       >
         <div className="grid gap-6">
-          <section className="grid gap-5 rounded-2xl border border-[#e9e0d2] bg-white p-5 sm:p-7">
-            <h2 className="text-lg font-semibold text-[#3f2d22]">
+          <section className="grid gap-5 rounded-2xl border border-border bg-card p-5 sm:p-7">
+            <h2 className="text-lg font-semibold text-foreground">
               Thông tin nhận hàng
             </h2>
             <fieldset className="grid gap-3">
-              <legend className="mb-2 text-sm font-medium text-stone-700">
+              <legend className="mb-2 text-sm font-medium text-foreground">
                 Hình thức nhận hàng
               </legend>
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#e9e0d2] px-4 py-3 has-[:checked]:border-[#754c32] has-[:checked]:bg-[#fbf8f2]">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-background">
                 <input
                   type="radio"
                   value="TAKEAWAY"
                   {...form.register("type")}
-                  className="accent-[#68452f]"
+                  className="accent-primary"
                 />
                 <span className="text-sm font-medium">Đến lấy tại quán</span>
               </label>
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#e9e0d2] px-4 py-3 has-[:checked]:border-[#754c32] has-[:checked]:bg-[#fbf8f2]">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-background">
                 <input
                   type="radio"
                   value="DELIVERY"
                   {...form.register("type")}
-                  className="accent-[#68452f]"
+                  className="accent-primary"
                 />
                 <span className="text-sm font-medium">
                   Giao hàng · {formatVND(DELIVERY_FEE)}
@@ -224,10 +224,10 @@ export function CheckoutForm({
               </label>
             </fieldset>
             {orderType === "DELIVERY" ? (
-              <label className="grid gap-2 text-sm font-medium text-stone-700">
+              <label className="grid gap-2 text-sm font-medium text-foreground">
                 Địa chỉ giao hàng
                 <textarea
-                  className="min-h-20 rounded-xl border border-[#e2d5c4] bg-white px-3 py-2 text-sm font-normal text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-[#a78361]"
+                  className="min-h-20 rounded-xl border border-border bg-card px-3 py-2 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                   placeholder="Số nhà, tên đường, phường/xã, quận/huyện..."
                   maxLength={500}
                   {...form.register("address")}
@@ -240,7 +240,7 @@ export function CheckoutForm({
               </label>
             ) : null}
             <div className="grid gap-4 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm font-medium text-stone-700">
+              <label className="grid gap-2 text-sm font-medium text-foreground">
                 Họ tên
                 <Input
                   autoComplete="name"
@@ -252,7 +252,7 @@ export function CheckoutForm({
                   </span>
                 ) : null}
               </label>
-              <label className="grid gap-2 text-sm font-medium text-stone-700">
+              <label className="grid gap-2 text-sm font-medium text-foreground">
                 Số điện thoại
                 <Input
                   type="tel"
@@ -267,10 +267,10 @@ export function CheckoutForm({
                 ) : null}
               </label>
             </div>
-            <label className="grid gap-2 text-sm font-medium text-stone-700">
+            <label className="grid gap-2 text-sm font-medium text-foreground">
               Ghi chú đơn hàng
               <textarea
-                className="min-h-20 rounded-xl border border-[#e2d5c4] bg-white px-3 py-2 text-sm font-normal text-stone-800 outline-none focus-visible:ring-2 focus-visible:ring-[#a78361]"
+                className="min-h-20 rounded-xl border border-border bg-card px-3 py-2 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-muted-foreground"
                 placeholder="Ghi chú thêm cho quán..."
                 maxLength={1000}
                 {...form.register("note")}
@@ -278,8 +278,8 @@ export function CheckoutForm({
             </label>
           </section>
 
-          <section className="grid gap-4 rounded-2xl border border-[#e9e0d2] bg-white p-5 sm:p-7">
-            <h2 className="text-lg font-semibold text-[#3f2d22]">
+          <section className="grid gap-4 rounded-2xl border border-border bg-card p-5 sm:p-7">
+            <h2 className="text-lg font-semibold text-foreground">
               Phương thức thanh toán
             </h2>
             {(
@@ -290,36 +290,36 @@ export function CheckoutForm({
               ] as const
             ).map(([method, label]) => (
               <label
-                className="flex cursor-pointer items-center gap-3 rounded-xl border border-[#e9e0d2] px-4 py-3 has-[:checked]:border-[#754c32] has-[:checked]:bg-[#fbf8f2]"
+                className="flex cursor-pointer items-center gap-3 rounded-xl border border-border px-4 py-3 has-[:checked]:border-primary has-[:checked]:bg-background"
                 key={method}
               >
                 <input
                   type="radio"
                   value={method}
                   {...form.register("paymentMethod")}
-                  className="accent-[#68452f]"
+                  className="accent-primary"
                 />
                 <span className="text-sm font-medium">{label}</span>
               </label>
             ))}
             {paymentMethod !== "CASH" ? (
-              <p className="rounded-lg bg-[#fbf8f2] px-4 py-3 text-sm text-[#68452f]">
+              <p className="rounded-lg bg-background px-4 py-3 text-sm text-primary">
                 Nhân viên sẽ liên hệ xác nhận thanh toán.
               </p>
             ) : null}
           </section>
         </div>
 
-        <aside className="grid gap-5 rounded-2xl border border-[#e9e0d2] bg-[#fbf8f2] p-5 sm:p-6">
-          <h2 className="text-lg font-semibold text-[#3f2d22]">
+        <aside className="grid gap-5 rounded-2xl border border-border bg-background p-5 sm:p-6">
+          <h2 className="text-lg font-semibold text-foreground">
             Đơn hàng của bạn
           </h2>
           <div className="max-h-80 overflow-y-auto">
             <CartItems />
           </div>
-          <div className="grid gap-3 border-t border-[#e2d5c4] pt-4">
+          <div className="grid gap-3 border-t border-border pt-4">
             <label
-              className="text-sm font-medium text-stone-700"
+              className="text-sm font-medium text-foreground"
               htmlFor="checkout-promo"
             >
               Mã giảm giá
@@ -327,7 +327,7 @@ export function CheckoutForm({
             <div className="flex gap-2">
               <Input
                 id="checkout-promo"
-                className="min-w-0 bg-white uppercase"
+                className="min-w-0 bg-card uppercase"
                 placeholder="Nhập mã"
                 maxLength={50}
                 {...form.register("promoCode")}
@@ -361,18 +361,18 @@ export function CheckoutForm({
               </p>
             ) : null}
             {promotion && validatedSubtotal !== subtotal ? (
-              <p className="text-sm text-amber-900" role="status">
+              <p className="text-sm text-primary" role="status">
                 Giỏ hàng đã thay đổi. Hãy áp dụng lại mã giảm giá.
               </p>
             ) : null}
           </div>
-          <div className="grid gap-3 border-t border-[#e2d5c4] pt-4 text-sm">
+          <div className="grid gap-3 border-t border-border pt-4 text-sm">
             <SummaryRow label="Tạm tính" value={formatVND(subtotal)} />
             <SummaryRow label="Giảm giá" value={`−${formatVND(discount)}`} />
             <SummaryRow label="Phí giao hàng" value={formatVND(deliveryFee)} />
-            <div className="flex items-center justify-between gap-4 border-t border-[#e2d5c4] pt-3 text-base font-semibold">
-              <span className="text-[#3f2d22]">Tổng cộng</span>
-              <span className="text-[#513625]">{formatVND(total)}</span>
+            <div className="flex items-center justify-between gap-4 border-t border-border pt-3 text-base font-semibold">
+              <span className="text-foreground">Tổng cộng</span>
+              <span className="text-primary">{formatVND(total)}</span>
             </div>
           </div>
           {submitError ? (
@@ -381,7 +381,7 @@ export function CheckoutForm({
             </p>
           ) : null}
           <Button
-            className="h-11 bg-[#68452f] text-white hover:bg-[#513625]"
+            className="h-11 bg-primary text-primary-foreground hover:bg-primary"
             type="submit"
             disabled={form.formState.isSubmitting}
           >
@@ -389,7 +389,7 @@ export function CheckoutForm({
               ? "Đang tạo đơn hàng..."
               : "Đặt hàng"}
           </Button>
-          <p className="text-xs leading-5 text-stone-500">
+          <p className="text-xs leading-5 text-muted-foreground">
             Tổng tiền sẽ được máy chủ tính lại theo thực đơn hiện tại.
           </p>
         </aside>
@@ -401,8 +401,8 @@ export function CheckoutForm({
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="text-stone-600">{label}</span>
-      <span className="font-medium text-stone-800">{value}</span>
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium text-foreground">{value}</span>
     </div>
   );
 }
