@@ -1,3 +1,5 @@
+"use client";
+
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Coffee01Icon } from "@hugeicons/core-free-icons";
 import { formatVND } from "@/lib/utils";
@@ -10,11 +12,12 @@ type MenuCardProps = {
     imageUrl: string | null;
     isAvailable: boolean;
   };
+  onClick?: () => void;
 };
 
-export function MenuCard({ item }: MenuCardProps) {
-  return (
-    <article className="overflow-hidden rounded-2xl border border-[#e9e0d2] bg-white shadow-sm">
+export function MenuCard({ item, onClick }: MenuCardProps) {
+  const content = (
+    <>
       {item.imageUrl ? (
         <div
           className="aspect-[4/3] bg-cover bg-center"
@@ -49,6 +52,23 @@ export function MenuCard({ item }: MenuCardProps) {
           {formatVND(item.price)}
         </p>
       </div>
+    </>
+  );
+
+  return (
+    <article className="overflow-hidden rounded-2xl border border-[#e9e0d2] bg-white shadow-sm">
+      {onClick ? (
+        <button
+          className="block w-full cursor-pointer text-left"
+          type="button"
+          onClick={onClick}
+          aria-haspopup="dialog"
+        >
+          {content}
+        </button>
+      ) : (
+        content
+      )}
     </article>
   );
 }
