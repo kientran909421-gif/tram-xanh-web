@@ -1,3 +1,5 @@
+export const DELIVERY_FEE = 15000;
+
 export const SITE_INFO = {
   name: "Cà phê An Nhiên",
   address: "123 Nguyễn Huệ, Quận 1, TP. Hồ Chí Minh",

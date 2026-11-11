@@ -1,0 +1,58 @@
+import { z } from "zod";
+
+const orderItemSchema = z
+  .object({
+    menuItemId: z.string().trim().min(1),
+    optionIds: z.array(z.string().trim().min(1)),
+    quantity: z.number().int().min(1).max(99),
+    note: z.string().max(200).optional(),
+  })
+  .strict()
+  .superRefine((item, context) => {
+    if (new Set(item.optionIds).size !== item.optionIds.length) {
+      context.addIssue({
+        code: "custom",
+        message: "Tùy chọn món không được lặp lại",
+        path: ["optionIds"],
+      });
+    }
+  });
+
+export const createOrderSchema = z
+  .object({
+    items: z.array(orderItemSchema).min(1).max(50),
+    type: z.enum(["TAKEAWAY", "DELIVERY"]),
+    customerName: z.string().trim().min(1).max(120),
+    customerPhone: z
+      .string()
+      .trim()
+      .regex(/^0\d{9}$/, "Số điện thoại phải có 10 chữ số và bắt đầu bằng 0"),
+    address: z.string().trim().max(500).optional(),
+    note: z.string().max(1000).optional(),
+    paymentMethod: z.enum(["CASH", "BANK_TRANSFER", "MOMO"]),
+    promoCode: z.string().trim().min(1).max(50).optional(),
+  })
+  .strict()
+  .superRefine((order, context) => {
+    if (order.type === "DELIVERY" && !order.address?.trim()) {
+      context.addIssue({
+        code: "custom",
+        message: "Vui lòng nhập địa chỉ giao hàng",
+        path: ["address"],
+      });
+    }
+  });
+
+export const trackOrderQuerySchema = z.object({
+  code: z.string().trim().min(1).max(32),
+  phone: z
+    .string()
+    .trim()
+    .regex(/^0\d{9}$/, "Số điện thoại không hợp lệ"),
+});
+
+export const myOrdersQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).max(1_000_000).default(1),
+});
+
+export type CreateOrderInput = z.infer<typeof createOrderSchema>;

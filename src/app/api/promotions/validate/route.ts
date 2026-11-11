@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { calcDiscount } from "@/lib/cart-utils";
+import { validatePromotion } from "@/services/promotion";
 import { promotionValidationSchema } from "@/lib/validations/promotion";
 
 export async function POST(request: Request) {
@@ -25,68 +24,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const code = parsed.data.code.toLocaleUpperCase("vi-VN");
   try {
-    const promotion = await prisma.promotion.findFirst({
-      where: {
-        code: { equals: code, mode: "insensitive" },
-      },
-    });
+    const result = await validatePromotion(
+      parsed.data.code,
+      parsed.data.subtotal,
+    );
 
-    if (!promotion) {
-      return NextResponse.json({
-        valid: false,
-        error: "Mã giảm giá không tồn tại.",
-      });
+    if (!result.valid) {
+      return NextResponse.json(result);
     }
-
-    if (!promotion.isActive) {
-      return NextResponse.json({
-        valid: false,
-        error: "Mã giảm giá hiện không hoạt động.",
-      });
-    }
-
-    const now = new Date();
-    if (now < promotion.startsAt || now > promotion.expiresAt) {
-      return NextResponse.json({
-        valid: false,
-        error: "Mã giảm giá chưa bắt đầu hoặc đã hết hạn.",
-      });
-    }
-
-    if (parsed.data.subtotal < promotion.minOrder) {
-      return NextResponse.json({
-        valid: false,
-        error: `Đơn hàng cần tối thiểu ${promotion.minOrder.toLocaleString("vi-VN")}đ để dùng mã này.`,
-      });
-    }
-
-    if (
-      promotion.usageLimit !== null &&
-      promotion.usedCount >= promotion.usageLimit
-    ) {
-      return NextResponse.json({
-        valid: false,
-        error: "Mã giảm giá đã hết lượt sử dụng.",
-      });
-    }
-
-    const discount = calcDiscount(parsed.data.subtotal, {
-      type: promotion.type,
-      value: promotion.value,
-      maxDiscount: promotion.maxDiscount,
-    });
 
     return NextResponse.json({
       valid: true,
       promotion: {
-        code: promotion.code,
-        type: promotion.type,
-        value: promotion.value,
-        maxDiscount: promotion.maxDiscount,
+        code: result.promotion.code,
+        type: result.promotion.type,
+        value: result.promotion.value,
+        maxDiscount: result.promotion.maxDiscount,
       },
-      discount,
+      discount: result.discount,
     });
   } catch (error) {
     console.error("Failed to validate promotion:", error);
